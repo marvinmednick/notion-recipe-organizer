@@ -1,14 +1,14 @@
 """Main CLI entry point for Notion Recipe Organizer.
 
-Version: v6
-Last updated: Added batch processing, range specification, and timeout controls
+Version: v7
+Last updated: Progressive complexity CLI with smart defaults and enhanced analysis
 """
 
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import click
 from rich.console import Console
@@ -18,6 +18,7 @@ from rich.table import Table
 from .config import config
 from .notion_client.client import NotionClient
 from .notion_client.analyzer import RecipeAnalyzer
+from .notion_client.profile_loader import ProfileLoader
 
 console = Console()
 
@@ -293,47 +294,129 @@ def extract(
     help="Input JSON file with extracted recipes",
 )
 @click.option("--output", type=click.Path(), help="Output file for analysis results")
+# Progressive complexity options
 @click.option(
-    "--sample-size",
-    type=int,
-    help="Number of recipes to analyze with LLM (for testing)",
+    "--profile", help="Use configuration profile (e.g., 'testing', 'production')"
 )
+@click.option("--quick", is_flag=True, help="Quick mode: statistics only, no LLM")
+@click.option("--sample", type=int, help="Test mode: analyze N recipes only")
+# Range specification
 @click.option("--start-index", type=int, help="Start analysis from this recipe index")
 @click.option("--end-index", type=int, help="End analysis at this recipe index")
+@click.option("--range", "range_spec", help="Recipe range (e.g., '50-100')")
+# Processing controls
 @click.option("--batch-size", type=int, help="Process recipes in batches of this size")
+@click.option("--batch-delay", type=float, help="Delay in seconds between batches")
+@click.option("--timeout", type=int, help="Timeout for individual LLM calls (seconds)")
+# Feature toggles
+@click.option("--use-llm/--no-llm", default=None, help="Enable/disable LLM analysis")
 @click.option(
-    "--batch-delay", type=float, default=0, help="Delay in seconds between batches"
+    "--include-content-review/--no-content-review",
+    default=None,
+    help="Enable/disable content quality analysis",
 )
 @click.option(
-    "--timeout", type=int, default=30, help="Timeout for individual LLM calls (seconds)"
+    "--basic-only", is_flag=True, help="Run only basic statistics analysis (legacy)"
 )
-@click.option(
-    "--use-llm", is_flag=True, help="Enable LLM-powered categorization analysis"
-)
-@click.option("--basic-only", is_flag=True, help="Run only basic statistics analysis")
 def analyze(
     input_file: Optional[str],
     output: Optional[str],
-    sample_size: Optional[int],
+    profile: Optional[str],
+    quick: bool,
+    sample: Optional[int],
     start_index: Optional[int],
     end_index: Optional[int],
+    range_spec: Optional[str],
     batch_size: Optional[int],
-    batch_delay: float,
-    timeout: int,
-    use_llm: bool,
+    batch_delay: Optional[float],
+    timeout: Optional[int],
+    use_llm: Optional[bool],
+    include_content_review: Optional[bool],
     basic_only: bool,
 ):
-    """Analyze extracted recipe data and suggest categorizations."""
+    """Analyze extracted recipe data and suggest categorizations.
+
+    Examples:
+      analyze                           # Smart defaults (LLM + content review)
+      analyze --quick                   # Statistics only
+      analyze --sample 5                # Test with 5 recipes
+      analyze --profile testing         # Use testing profile
+      analyze --range 50-100            # Analyze recipes 50-100
+      analyze --profile production      # Optimized for large datasets
+    """
 
     console.print("[bold blue]📊 Analyzing Recipe Data[/bold blue]")
 
+    # Load configuration profiles
+    profile_loader = ProfileLoader()
+
+    # Step 1: Get base settings (smart defaults)
+    settings = profile_loader.get_default_settings()
+
+    # Step 2: Apply shortcuts
+    if quick:
+        shortcut_profile = profile_loader.get_shortcut_profile("quick")
+        if shortcut_profile:
+            settings = profile_loader.apply_profile_to_settings(
+                settings, shortcut_profile
+            )
+        else:
+            settings.update({"use_llm": False, "include_content_review": False})
+
+    # Step 3: Apply profile
+    if profile:
+        settings = profile_loader.apply_profile_to_settings(settings, profile)
+
+    # Step 4: Apply sample shortcut
+    if sample:
+        settings["sample_size"] = sample
+        # Remove any conflicting range settings
+        settings.pop("start_index", None)
+        settings.pop("end_index", None)
+
+    # Step 5: Handle range specification
+    if range_spec:
+        try:
+            start_str, end_str = range_spec.split("-")
+            start_index = int(start_str)
+            end_index = int(end_str)
+        except ValueError:
+            console.print(
+                f"[red]❌ Invalid range format: {range_spec}. Use format like '50-100'[/red]"
+            )
+            return
+
+    # Step 6: Apply individual overrides (highest priority)
+    if start_index is not None:
+        settings["start_index"] = start_index
+    if end_index is not None:
+        settings["end_index"] = end_index
+    if batch_size is not None:
+        settings["batch_size"] = batch_size
+    if batch_delay is not None:
+        settings["batch_delay"] = batch_delay
+    if timeout is not None:
+        settings["timeout"] = timeout
+    if use_llm is not None:
+        settings["use_llm"] = use_llm
+    if include_content_review is not None:
+        settings["include_content_review"] = include_content_review
+
+    # Step 7: Handle legacy basic-only flag
+    if basic_only:
+        settings["use_llm"] = False
+        settings["include_content_review"] = False
+
     # Validate parameter combinations
-    if sample_size and (start_index is not None or end_index is not None):
-        console.print(
-            "[yellow]⚠️  --sample-size cannot be used with --start-index or --end-index[/yellow]"
-        )
-        console.print("Using range specification, ignoring --sample-size")
-        sample_size = None
+    if settings.get("sample_size") and (
+        settings.get("start_index") is not None or settings.get("end_index") is not None
+    ):
+        console.print("[yellow]⚠️  Sample mode overrides range specification[/yellow]")
+        settings.pop("start_index", None)
+        settings.pop("end_index", None)
+
+    # Display effective settings
+    _display_analysis_settings(settings, profile, quick, sample)
 
     # Determine input file
     if not input_file:
@@ -353,23 +436,6 @@ def analyze(
     if not recipe_data:
         return
 
-    # Show processing parameters
-    total_recipes = len(recipe_data.get("records", []))
-    if start_index is not None or end_index is not None:
-        start_idx = start_index or 0
-        end_idx = end_index or total_recipes - 1
-        console.print(f"[dim]Processing range: {start_idx} to {end_idx}[/dim]")
-    elif sample_size:
-        console.print(f"[dim]Sample mode: processing first {sample_size} recipes[/dim]")
-
-    if batch_size:
-        console.print(
-            f"[dim]Batch processing: {batch_size} recipes per batch, {batch_delay}s delay[/dim]"
-        )
-
-    if use_llm:
-        console.print(f"[dim]LLM timeout: {timeout} seconds per recipe[/dim]")
-
     # Run basic statistics analysis
     console.print("\n[bold blue]🔍 Running Basic Analysis...[/bold blue]")
     basic_stats = analyzer.analyze_basic_stats(recipe_data)
@@ -377,19 +443,20 @@ def analyze(
 
     categorization_results = None
 
-    # Run LLM analysis if requested and not basic-only
-    if use_llm and not basic_only:
+    # Run LLM analysis if enabled
+    if settings.get("use_llm", False):
         try:
             config.validate_required()  # Check Azure OpenAI config
 
             categorization_results = analyzer.categorize_recipes_llm(
                 recipe_data=recipe_data,
-                sample_size=sample_size,
-                start_index=start_index,
-                end_index=end_index,
-                batch_size=batch_size,
-                batch_delay=batch_delay,
-                timeout=timeout,
+                sample_size=settings.get("sample_size"),
+                start_index=settings.get("start_index"),
+                end_index=settings.get("end_index"),
+                batch_size=settings.get("batch_size"),
+                batch_delay=settings.get("batch_delay", 0),
+                timeout=settings.get("timeout", 30),
+                include_content_review=settings.get("include_content_review", True),
             )
             analyzer.display_categorization_results(categorization_results)
 
@@ -401,11 +468,8 @@ def analyze(
             console.print(f"❌ LLM Analysis Error: [bold red]{e}[/bold red]")
             return
 
-    elif use_llm and basic_only:
-        console.print("[yellow]⚠️  --basic-only flag overrides --use-llm[/yellow]")
-
-    # Save results if requested
-    if output or not basic_only:
+    # Save results
+    if output or settings.get("use_llm", False):
         output_path = (
             Path(output)
             if output
@@ -417,30 +481,108 @@ def analyze(
             categorization_results = {
                 "total_analyzed": 0,
                 "note": "LLM analysis not performed. Use --use-llm flag to enable.",
+                "settings_used": settings,
             }
 
         analyzer.save_analysis_results(basic_stats, categorization_results, output_path)
 
     # Show recommendations
-    console.print("\n[bold blue]💡 Next Steps[/bold blue]")
-    if not use_llm:
-        console.print(
-            "• Run with [bold cyan]--use-llm[/bold cyan] to get AI-powered categorization suggestions"
-        )
-    if sample_size or (start_index is not None and end_index is not None):
-        console.print("• Remove range/sample limits to analyze all recipes")
-    if basic_stats["recipes_with_tags"] > 0:
-        console.print(
-            f"• You have {basic_stats['recipes_with_tags']} recipes with existing tags to preserve"
-        )
-    if categorization_results and categorization_results.get("failed_analyses"):
-        failed_count = len(categorization_results["failed_analyses"])
-        console.print(
-            f"• [yellow]{failed_count} recipes failed analysis - consider increasing --timeout[/yellow]"
-        )
+    _show_analysis_recommendations(
+        settings, basic_stats, categorization_results, profile_loader
+    )
 
     console.print("\n[bold green]🎉 Analysis completed![/bold green]")
 
 
+def _display_analysis_settings(
+    settings: Dict[str, Any], profile: Optional[str], quick: bool, sample: Optional[int]
+) -> None:
+    """Display the effective analysis settings."""
+    console.print("\n[dim]📋 Analysis Settings:[/dim]")
+
+    if profile:
+        console.print(f"[dim]Profile: {profile}[/dim]")
+    if quick:
+        console.print(f"[dim]Quick mode: statistics only[/dim]")
+    if sample:
+        console.print(f"[dim]Sample mode: {sample} recipes[/dim]")
+
+    # Show key settings
+    use_llm = settings.get("use_llm", False)
+    include_content_review = settings.get("include_content_review", False)
+
+    if use_llm:
+        mode_desc = "LLM analysis"
+        if include_content_review:
+            mode_desc += " + content review"
+        console.print(f"[dim]Mode: {mode_desc}[/dim]")
+
+        # Show processing settings
+        if settings.get("batch_size"):
+            console.print(
+                f"[dim]Batch size: {settings['batch_size']}, delay: {settings.get('batch_delay', 0)}s[/dim]"
+            )
+        console.print(f"[dim]Timeout: {settings.get('timeout', 30)}s per recipe[/dim]")
+    else:
+        console.print(f"[dim]Mode: Basic statistics only[/dim]")
+
+
+def _show_analysis_recommendations(
+    settings: Dict[str, Any],
+    basic_stats: Dict[str, Any],
+    categorization_results: Optional[Dict[str, Any]],
+    profile_loader: ProfileLoader,
+) -> None:
+    """Show recommendations for next steps."""
+    console.print("\n[bold blue]💡 Next Steps[/bold blue]")
+
+    if not settings.get("use_llm", False):
+        console.print(
+            "• Run with LLM analysis: [bold cyan]analyze[/bold cyan] (uses smart defaults)"
+        )
+        console.print("• Quick test: [bold cyan]analyze --sample 5[/bold cyan]")
+
+    if settings.get("sample_size") or (settings.get("start_index") is not None):
+        console.print(
+            "• Analyze all recipes: [bold cyan]analyze[/bold cyan] (remove sample/range limits)"
+        )
+
+    if basic_stats.get("recipes_with_tags", 0) > 0:
+        console.print(
+            f"• You have {basic_stats['recipes_with_tags']} recipes with existing tags to preserve"
+        )
+
+    if categorization_results:
+        # Content quality recommendations
+        content_stats = categorization_results.get("content_quality_stats", {})
+        non_recipes = content_stats.get("non_recipes", 0)
+        title_improvements = content_stats.get("titles_needing_improvement", 0)
+
+        if non_recipes > 0:
+            console.print(
+                f"• [yellow]{non_recipes} non-recipe items found[/yellow] - check content_issues_report.json"
+            )
+        if title_improvements > 0:
+            console.print(
+                f"• [cyan]{title_improvements} titles need improvement[/cyan] - check title_improvements.csv"
+            )
+
+        # Processing recommendations
+        failed_count = len(categorization_results.get("failed_analyses", []))
+        if failed_count > 0:
+            console.print(
+                f"• [yellow]{failed_count} recipes failed analysis[/yellow] - consider increasing --timeout"
+            )
+
+    # Show available profiles
+    console.print(
+        "• Available profiles: [bold cyan]--profile testing[/bold cyan], [bold cyan]--profile production[/bold cyan]"
+    )
+    console.print(
+        "• Quick options: [bold cyan]--quick[/bold cyan], [bold cyan]--sample N[/bold cyan]"
+    )
+
+
 if __name__ == "__main__":
     cli()
+

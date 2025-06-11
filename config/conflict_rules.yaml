@@ -1,17 +1,26 @@
 # Conflict Resolution Rules
-# Version: v1
+# Version: v2
 # Rules for handling edge cases and conflicts in categorization
 
 primary_category_rules:
   precedence_order:
     # Lower number = higher precedence (wins conflicts)
-    1: Breakfast      # Highest precedence
-    2: Desserts      # Second highest
-    3: Baking        # Third highest  
+    0: "Not a Recipe"  # Highest precedence - non-recipe content
+    1: Breakfast      # Second highest
+    2: Desserts      # Third highest
+    3: Baking        # Fourth highest  
     4: [Beef, Chicken, Pork, Seafood, Vegetarian]  # Protein-based (equal precedence)
     5: "Sides & Appetizers"  # Lowest precedence
 
   specific_rules:
+    not_recipe_precedence:
+      description: "Non-recipe content always gets categorized as 'Not a Recipe'"
+      examples:
+        - "Books about cooking go to Not a Recipe, not based on content"
+        - "Equipment reviews go to Not a Recipe"
+        - "General food articles without recipes go to Not a Recipe"
+      reasoning: "Content type is more important than subject matter for non-recipes"
+      
     breakfast_precedence:
       description: "Breakfast items always stay in Breakfast category"
       examples:
@@ -43,6 +52,33 @@ primary_category_rules:
         - "Pasta with meat sauce -> based on primary protein in sauce"
         - "Salad with chicken -> Chicken category"
       reasoning: "Any significant meat content moves it out of Vegetarian"
+
+content_quality_rules:
+  recipe_identification:
+    description: "How to determine if content is actually a recipe"
+    criteria:
+      - "Contains ingredient list and cooking instructions"
+      - "Focused on preparing a specific food item"
+      - "Has actionable cooking steps"
+    non_recipe_indicators:
+      - "Book reviews or cookbook discussions"
+      - "Equipment recommendations without recipes"
+      - "General cooking tips or techniques"
+      - "Food history or cultural articles"
+      - "Restaurant reviews or food critiques"
+      
+  title_evaluation:
+    description: "When to suggest title improvements"
+    needs_improvement:
+      - "Very long titles that are hard to scan"
+      - "Unclear or vague titles"
+      - "Titles that don't describe the actual dish"
+      - "Titles with excessive punctuation or formatting"
+    good_titles:
+      - "Clear, descriptive, and concise"
+      - "Identifies the main dish or food item"
+      - "Easy to understand and remember"
+      - "Appropriate length (under 80 characters preferred)"
 
 cuisine_assignment_rules:
   fusion_handling:
@@ -89,5 +125,6 @@ usage_tag_guidelines:
 # Meta Rules:
 # - When in doubt, choose the more general category
 # - Precedence rules are strict - higher precedence always wins
+# - Non-recipe content always gets "Not a Recipe" regardless of subject matter
 # - Document any exceptions or edge cases for future reference
 # - These rules should be updated based on real-world categorization experience

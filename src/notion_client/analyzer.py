@@ -1,7 +1,7 @@
 """Recipe analysis engine with LLM-powered categorization.
 
-Version: v1
-Last updated: Initial analysis tools with Azure OpenAI integration
+Version: v2
+Last updated: Enhanced analysis with content quality assessment and title evaluation
 """
 
 import json
@@ -148,6 +148,7 @@ class RecipeAnalyzer:
         batch_size: Optional[int] = None,
         batch_delay: float = 0,
         timeout: int = 30,
+        include_content_review: bool = True,
     ) -> Dict[str, Any]:
         """Use LLM to categorize recipes based on titles and content."""
         records = recipe_data.get("records", [])
@@ -177,17 +178,31 @@ class RecipeAnalyzer:
             "dietary_tags_distribution": defaultdict(int),
             "usage_tags_distribution": defaultdict(int),
             "failed_analyses": [],
+            "content_quality_stats": {
+                "non_recipes": 0,
+                "titles_needing_improvement": 0,
+                "average_quality_score": 0,
+                "quality_distribution": defaultdict(int),
+            },
             "processing_info": {
                 "start_index": start_index or 0,
                 "end_index": end_index,
                 "batch_size": batch_size,
                 "timeout": timeout,
+                "include_content_review": include_content_review,
             },
         }
 
         console.print(
             f"\n[bold blue]🤖 Analyzing {total_recipes} recipes with LLM...[/bold blue]"
         )
+
+        if include_content_review:
+            console.print(
+                "[dim]Enhanced analysis: content quality + categorization[/dim]"
+            )
+        else:
+            console.print("[dim]Standard analysis: categorization only[/dim]")
 
         if start_index is not None or end_index is not None:
             range_info = f"Range: {start_index or 0} to {end_index or len(recipe_data.get('records', [])) - 1}"
@@ -212,11 +227,19 @@ class RecipeAnalyzer:
                 batch_delay,
                 timeout,
                 start_index or 0,
+                include_content_review,
             )
         else:
             self._process_single_batch(
-                records, categorization_results, timeout, start_index or 0
+                records,
+                categorization_results,
+                timeout,
+                start_index or 0,
+                include_content_review,
             )
+
+        # Calculate content quality statistics
+        self._calculate_content_quality_stats(categorization_results)
 
         return categorization_results
 
@@ -228,6 +251,7 @@ class RecipeAnalyzer:
         batch_delay: float,
         timeout: int,
         start_offset: int,
+        include_content_review: bool,
     ) -> None:
         """Process recipes in batches with delays."""
         import time
@@ -263,7 +287,9 @@ class RecipeAnalyzer:
                         description=f"Analyzing recipe {recipe_idx} ({i + 1}/{len(batch_records)})",
                     )
 
-                    self._analyze_and_store_recipe(record, results, timeout, recipe_idx)
+                    self._analyze_and_store_recipe(
+                        record, results, timeout, recipe_idx, include_content_review
+                    )
 
             console.print(
                 f"✅ Batch {batch_num + 1} complete: {len(batch_records)} recipes processed"
@@ -277,7 +303,12 @@ class RecipeAnalyzer:
                 time.sleep(batch_delay)
 
     def _process_single_batch(
-        self, records: List[Dict], results: Dict, timeout: int, start_offset: int
+        self,
+        records: List[Dict],
+        results: Dict,
+        timeout: int,
+        start_offset: int,
+        include_content_review: bool,
     ) -> None:
         """Process all recipes in a single batch."""
         with Progress(
@@ -295,10 +326,17 @@ class RecipeAnalyzer:
                     description=f"Analyzing recipe {recipe_idx} ({i + 1}/{len(records)})",
                 )
 
-                self._analyze_and_store_recipe(record, results, timeout, recipe_idx)
+                self._analyze_and_store_recipe(
+                    record, results, timeout, recipe_idx, include_content_review
+                )
 
     def _analyze_and_store_recipe(
-        self, record: Dict, results: Dict, timeout: int, recipe_idx: int
+        self,
+        record: Dict,
+        results: Dict,
+        timeout: int,
+        recipe_idx: int,
+        include_content_review: bool,
     ) -> None:
         """Analyze a single recipe and store results."""
         title = record.get("title", "Untitled")
@@ -306,7 +344,7 @@ class RecipeAnalyzer:
 
         # Analyze recipe with timeout and error handling
         categorization = self._analyze_single_recipe(
-            title, existing_tags, timeout, recipe_idx
+            title, existing_tags, timeout, recipe_idx, include_content_review
         )
 
         if categorization:
@@ -329,6 +367,18 @@ class RecipeAnalyzer:
                 results["dietary_tags_distribution"][tag] += 1
             for tag in categorization.get("usage_tags", []):
                 results["usage_tags_distribution"][tag] += 1
+
+            # Update content quality stats
+            if include_content_review:
+                if not categorization.get("is_recipe", True):
+                    results["content_quality_stats"]["non_recipes"] += 1
+                if categorization.get("title_needs_improvement", False):
+                    results["content_quality_stats"]["titles_needing_improvement"] += 1
+                quality_score = categorization.get("quality_score", 0)
+                if quality_score > 0:
+                    results["content_quality_stats"]["quality_distribution"][
+                        quality_score
+                    ] += 1
         else:
             # Record failed analysis
             results["failed_analyses"].append(
@@ -345,11 +395,14 @@ class RecipeAnalyzer:
         existing_tags: List[str],
         timeout: int = 30,
         recipe_idx: Optional[int] = None,
+        include_content_review: bool = True,
     ) -> Optional[Dict[str, Any]]:
         """Analyze a single recipe using LLM with timeout and error handling."""
         # Load configuration and build prompt
         config_loader = ConfigLoader()
-        prompt = self._build_prompt_from_config(title, existing_tags, config_loader)
+        prompt = self._build_prompt_from_config(
+            title, existing_tags, config_loader, include_content_review
+        )
 
         try:
             response = self.openai_client.chat.completions.create(
@@ -362,15 +415,35 @@ class RecipeAnalyzer:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
-                max_tokens=500,
-                timeout=timeout,  # Add timeout
+                max_tokens=600,  # Increased for enhanced analysis
+                timeout=timeout,
             )
 
             response_text = response.choices[0].message.content.strip()
 
             # Try to parse JSON response
             try:
-                return json.loads(response_text)
+                result = json.loads(response_text)
+
+                # Validate required fields for enhanced analysis
+                if include_content_review:
+                    required_fields = [
+                        "is_recipe",
+                        "content_summary",
+                        "title_needs_improvement",
+                        "proposed_title",
+                        "quality_score",
+                        "primary_category",
+                    ]
+                    missing_fields = [
+                        field for field in required_fields if field not in result
+                    ]
+                    if missing_fields:
+                        logger.warning(
+                            f"Missing enhanced analysis fields for recipe {recipe_idx}: {missing_fields}"
+                        )
+
+                return result
             except json.JSONDecodeError:
                 logger.warning(
                     f"Invalid JSON response for recipe {recipe_idx} '{title}': {response_text}"
@@ -386,7 +459,11 @@ class RecipeAnalyzer:
             return None
 
     def _build_prompt_from_config(
-        self, title: str, existing_tags: List[str], config_loader: ConfigLoader
+        self,
+        title: str,
+        existing_tags: List[str],
+        config_loader: ConfigLoader,
+        include_content_review: bool = True,
     ) -> str:
         """Build LLM prompt from YAML configuration files."""
         # Load the base prompt template
@@ -394,7 +471,9 @@ class RecipeAnalyzer:
 
         if not base_prompt_path.exists():
             # Fallback to hardcoded prompt if template file doesn't exist
-            return self._build_fallback_prompt(title, existing_tags)
+            return self._build_fallback_prompt(
+                title, existing_tags, include_content_review
+            )
 
         try:
             with open(base_prompt_path, "r") as f:
@@ -425,18 +504,22 @@ class RecipeAnalyzer:
 
         except Exception as e:
             logger.warning(f"Failed to load prompt template: {e}, using fallback")
-            return self._build_fallback_prompt(title, existing_tags)
+            return self._build_fallback_prompt(
+                title, existing_tags, include_content_review
+            )
 
-    def _build_fallback_prompt(self, title: str, existing_tags: List[str]) -> str:
+    def _build_fallback_prompt(
+        self, title: str, existing_tags: List[str], include_content_review: bool = True
+    ) -> str:
         """Fallback prompt if YAML config system fails."""
-        return f"""
+        base_prompt = f"""
 Analyze this recipe and categorize it:
 
 Recipe Title: "{title}"
 Existing Tags: {existing_tags if existing_tags else "None"}
 
 PRIMARY CATEGORY (choose exactly one):
-- Breakfast, Beef, Chicken, Pork, Seafood, Vegetarian, Baking, Sides & Appetizers, Desserts
+- Not a Recipe, Breakfast, Beef, Chicken, Pork, Seafood, Vegetarian, Baking, Sides & Appetizers, Desserts
 
 CUISINE TYPE: Mexican, Italian, Asian, American, Mediterranean, Indian, French, Other
 
@@ -445,15 +528,57 @@ DIETARY TAGS: Food Allergy Safe, Vegetarian, Vegan, Gluten-Free, Dairy-Free, Low
 USAGE TAGS: Want to Try, Holiday/Special Occasion
 
 Respond in JSON format:
-{{
+"""
+
+        if include_content_review:
+            return (
+                base_prompt
+                + """
+{
+    "is_recipe": true/false,
+    "content_summary": "Brief description of content",
+    "title_needs_improvement": true/false,
+    "proposed_title": "Suggested title or same if good",
+    "quality_score": 3,
     "primary_category": "category_name",
     "cuisine_type": "cuisine_name_or_Other",
     "dietary_tags": ["tag1", "tag2"],
     "usage_tags": ["tag1", "tag2"],
     "confidence": 4,
     "reasoning": "Brief explanation"
-}}
+}
 """
+            )
+        else:
+            return (
+                base_prompt
+                + """
+{
+    "primary_category": "category_name",
+    "cuisine_type": "cuisine_name_or_Other",
+    "dietary_tags": ["tag1", "tag2"],
+    "usage_tags": ["tag1", "tag2"],
+    "confidence": 4,
+    "reasoning": "Brief explanation"
+}
+"""
+            )
+
+    def _calculate_content_quality_stats(self, results: Dict[str, Any]) -> None:
+        """Calculate content quality statistics from analysis results."""
+        if not results["categorizations"]:
+            return
+
+        quality_scores = []
+        for cat in results["categorizations"]:
+            quality_score = cat.get("quality_score", 0)
+            if quality_score > 0:
+                quality_scores.append(quality_score)
+
+        if quality_scores:
+            results["content_quality_stats"]["average_quality_score"] = sum(
+                quality_scores
+            ) / len(quality_scores)
 
     def display_categorization_results(self, results: Dict[str, Any]) -> None:
         """Display categorization results in a nice format."""
@@ -468,6 +593,10 @@ Respond in JSON format:
                 f"Failed: [bold red]{len(results['failed_analyses'])}[/bold red] recipes"
             )
             console.print("[dim]Check logs for timeout or error details[/dim]")
+
+        # Content quality overview (if enhanced analysis was performed)
+        if results.get("processing_info", {}).get("include_content_review"):
+            self._display_content_quality_overview(results)
 
         # Primary category distribution
         console.print("\n[bold blue]📂 Primary Category Distribution[/bold blue]")
@@ -532,6 +661,57 @@ Respond in JSON format:
 
             console.print(usage_table)
 
+    def _display_content_quality_overview(self, results: Dict[str, Any]) -> None:
+        """Display content quality analysis overview."""
+        quality_stats = results.get("content_quality_stats", {})
+
+        console.print("\n[bold blue]📊 Content Quality Overview[/bold blue]")
+
+        # Non-recipe items
+        non_recipes = quality_stats.get("non_recipes", 0)
+        if non_recipes > 0:
+            console.print(
+                f"Non-recipe items: [bold yellow]{non_recipes}[/bold yellow] (flagged for review)"
+            )
+
+        # Title improvements
+        title_improvements = quality_stats.get("titles_needing_improvement", 0)
+        if title_improvements > 0:
+            console.print(
+                f"Titles needing improvement: [bold cyan]{title_improvements}[/bold cyan]"
+            )
+
+        # Average quality score
+        avg_quality = quality_stats.get("average_quality_score", 0)
+        if avg_quality > 0:
+            console.print(
+                f"Average quality score: [bold green]{avg_quality:.1f}/5[/bold green]"
+            )
+
+        # Quality distribution
+        quality_dist = quality_stats.get("quality_distribution", {})
+        if quality_dist:
+            console.print("\n[bold blue]⭐ Quality Score Distribution[/bold blue]")
+            quality_table = Table()
+            quality_table.add_column("Score", style="cyan")
+            quality_table.add_column("Count", style="green")
+            quality_table.add_column("Description", style="yellow")
+
+            score_descriptions = {
+                1: "Poor/Not useful",
+                2: "Below average",
+                3: "Average/Decent",
+                4: "Good/Useful",
+                5: "Excellent/Very useful",
+            }
+
+            for score in sorted(quality_dist.keys()):
+                count = quality_dist[score]
+                description = score_descriptions.get(score, "Unknown")
+                quality_table.add_row(str(score), str(count), description)
+
+            console.print(quality_table)
+
     def save_analysis_results(
         self, stats: Dict[str, Any], categorization: Dict[str, Any], output_path: Path
     ) -> None:
@@ -549,5 +729,92 @@ Respond in JSON format:
 
         console.print(
             f"💾 Analysis results saved to: [bold green]{output_path}[/bold green]"
+        )
+
+        # Save specialized reports if enhanced analysis was performed
+        if categorization.get("processing_info", {}).get("include_content_review"):
+            self._save_specialized_reports(categorization, output_path.parent)
+
+    def _save_specialized_reports(
+        self, categorization_results: Dict[str, Any], output_dir: Path
+    ) -> None:
+        """Save specialized reports for content issues and title improvements."""
+        categorizations = categorization_results.get("categorizations", [])
+
+        # Content issues report (non-recipes)
+        non_recipes = [cat for cat in categorizations if not cat.get("is_recipe", True)]
+        if non_recipes:
+            content_issues_path = output_dir / "content_issues_report.json"
+            content_issues = {
+                "timestamp": str(datetime.now()),
+                "total_non_recipes": len(non_recipes),
+                "non_recipe_items": non_recipes,
+            }
+
+            with open(content_issues_path, "w") as f:
+                json.dump(content_issues, f, indent=2, default=str)
+
+            console.print(
+                f"📋 Content issues report saved to: [bold yellow]{content_issues_path}[/bold yellow]"
+            )
+
+        # Title improvements report
+        title_improvements = [
+            cat for cat in categorizations if cat.get("title_needs_improvement", False)
+        ]
+        if title_improvements:
+            title_improvements_path = output_dir / "title_improvements.csv"
+
+            import csv
+
+            with open(
+                title_improvements_path, "w", newline="", encoding="utf-8"
+            ) as csvfile:
+                fieldnames = [
+                    "recipe_index",
+                    "original_title",
+                    "proposed_title",
+                    "reasoning",
+                    "record_id",
+                ]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for cat in title_improvements:
+                    writer.writerow(
+                        {
+                            "recipe_index": cat.get("recipe_index", ""),
+                            "original_title": cat.get("original_title", ""),
+                            "proposed_title": cat.get("proposed_title", ""),
+                            "reasoning": cat.get("reasoning", ""),
+                            "record_id": cat.get("record_id", ""),
+                        }
+                    )
+
+            console.print(
+                f"📝 Title improvements report saved to: [bold cyan]{title_improvements_path}[/bold cyan]"
+            )
+
+        # Processing summary
+        processing_summary_path = output_dir / "processing_summary.json"
+        processing_summary = {
+            "timestamp": str(datetime.now()),
+            "total_analyzed": categorization_results.get("total_analyzed", 0),
+            "total_attempted": categorization_results.get("total_attempted", 0),
+            "failed_analyses_count": len(
+                categorization_results.get("failed_analyses", [])
+            ),
+            "content_quality_stats": categorization_results.get(
+                "content_quality_stats", {}
+            ),
+            "processing_info": categorization_results.get("processing_info", {}),
+            "failed_analyses": categorization_results.get("failed_analyses", []),
+        }
+
+        with open(processing_summary_path, "w") as f:
+            json.dump(processing_summary, f, indent=2, default=str)
+
+        console.print(
+            f"📊 Processing summary saved to: [bold green]{processing_summary_path}[/bold green]"
         )
 

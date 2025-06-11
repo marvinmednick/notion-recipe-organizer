@@ -1,0 +1,91 @@
+# Analysis Configuration Profiles
+# Version: v1
+# Predefined settings for common analysis scenarios
+
+profiles:
+  default:
+    description: "Smart defaults for comprehensive analysis"
+    use_llm: true
+    include_content_review: true
+    batch_size: 20
+    batch_delay: 2
+    timeout: 30
+    
+  quick:
+    description: "Fast analysis - statistics only, no LLM"
+    use_llm: false
+    include_content_review: false
+    
+  testing:
+    description: "Test mode with sample recipes and longer timeouts"
+    use_llm: true
+    include_content_review: true
+    sample_size: 10
+    timeout: 60
+    batch_delay: 1
+    
+  production:
+    description: "Optimized for large datasets with faster processing"
+    use_llm: true
+    include_content_review: true
+    batch_size: 50
+    batch_delay: 1
+    timeout: 45
+    
+  content_cleanup:
+    description: "Focus on content quality analysis"
+    use_llm: true
+    include_content_review: true
+    batch_size: 15
+    batch_delay: 3
+    timeout: 45
+    
+  sample_small:
+    description: "Quick test with 5 recipes"
+    use_llm: true
+    include_content_review: true
+    sample_size: 5
+    timeout: 30
+    
+  sample_medium:
+    description: "Medium test with 20 recipes"
+    use_llm: true
+    include_content_review: true
+    sample_size: 20
+    timeout: 30
+    batch_size: 10
+    
+  debugging:
+    description: "Slow, careful analysis for troubleshooting"
+    use_llm: true
+    include_content_review: true
+    batch_size: 5
+    batch_delay: 5
+    timeout: 90
+
+# Shortcut mappings for CLI convenience
+shortcuts:
+  quick:
+    profile: quick
+    description: "Statistics only, no LLM analysis"
+    
+  sample:
+    profile: sample_small
+    description: "Quick test with 5 recipes"
+    
+  production:
+    profile: production
+    description: "Optimized for large datasets"
+    
+  test:
+    profile: testing
+    description: "Test mode with 10 recipes and longer timeouts"
+
+# Default overrides for common flags
+flag_defaults:
+  # These settings apply when no profile is specified
+  use_llm: true
+  include_content_review: true
+  batch_size: 20
+  batch_delay: 2
+  timeout: 30

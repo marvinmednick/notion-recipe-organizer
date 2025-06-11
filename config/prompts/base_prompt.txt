@@ -4,7 +4,21 @@ You are a culinary expert helping categorize recipes for a personal recipe colle
 Title: "{{recipe_title}}"
 Existing Tags: {{existing_tags}}
 
-## Categorization Schema:
+## FIRST: Determine if this is actually a recipe
+Before categorizing, determine if this item is actually a recipe or if it was saved by mistake. Look for:
+- Ingredient lists and cooking instructions
+- Focus on preparing a specific food item
+- Actionable cooking steps
+
+If this appears to be a book, article, equipment review, or other non-recipe content, categorize it as "Not a Recipe" regardless of food-related topics.
+
+## SECOND: Evaluate content quality
+- Generate a brief 1-2 sentence summary of what this item actually contains
+- Assess if the title clearly describes the content
+- Suggest an improved title if the current one is unclear, too long, or unhelpful
+- Rate the overall quality/usefulness (1-5 scale)
+
+## THIRD: Categorize the content
 
 ### PRIMARY CATEGORY (choose exactly one):
 {{primary_categories}}
@@ -23,19 +37,28 @@ Existing Tags: {{existing_tags}}
 
 ## Important Guidelines:
 
-1. **Primary Category**: Every recipe must have exactly one primary category. Use the precedence rules to resolve conflicts.
+1. **Content Type First**: If it's not a recipe, use "Not a Recipe" regardless of food-related subject matter.
 
-2. **Cuisine Assignment**: Only assign a cuisine if it clearly fits. Use "Other" for fusion dishes, simple preparations, or unclear cases.
+2. **Primary Category**: Every item must have exactly one primary category. Use the precedence rules to resolve conflicts.
 
-3. **Dietary Tags**: Be conservative - only assign tags you're confident about. Missing a tag is better than incorrectly assigning one.
+3. **Cuisine Assignment**: Only assign a cuisine if it clearly fits. Use "Other" for fusion dishes, simple preparations, or unclear cases.
 
-4. **Usage Tags**: Only assign auto-assignable usage tags. Manual tags (Favorite, Tried & Tested, Family Recipe, Experimental) should not be assigned.
+4. **Dietary Tags**: Be conservative - only assign tags you're confident about. Missing a tag is better than incorrectly assigning one.
 
-5. **Confidence**: Rate your overall confidence in the categorization from 1 (uncertain) to 5 (very confident).
+5. **Usage Tags**: Only assign auto-assignable usage tags. Manual tags (Favorite, Tried & Tested, Family Recipe, Experimental) should not be assigned.
+
+6. **Title Evaluation**: Only suggest title changes if the current title is genuinely unclear, too long, or unhelpful.
+
+7. **Quality Assessment**: Rate overall usefulness (1=poor/not useful, 5=excellent/very useful).
 
 ## Response Format:
 Respond with valid JSON in this exact format:
 {
+    "is_recipe": true/false,
+    "content_summary": "Brief 1-2 sentence description of what this item actually contains",
+    "title_needs_improvement": true/false,
+    "proposed_title": "Suggested better title (or same title if current is good)",
+    "quality_score": 3,
     "primary_category": "category_name",
     "cuisine_type": "cuisine_name_or_Other", 
     "dietary_tags": ["tag1", "tag2"],

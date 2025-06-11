@@ -1,8 +1,18 @@
 # Primary Categories Configuration
-# Version: v1
+# Version: v2
 # These are mutually exclusive - each recipe gets exactly one primary category
 
 categories:
+  Not a Recipe:
+    description: "Items that were saved by mistake and are not actually recipes"
+    criteria:
+      - "Books, articles, or other non-food content"
+      - "Website URLs that don't contain recipe information"
+      - "Non-cooking related content accidentally saved"
+      - "Equipment reviews, cooking tips, or general food articles"
+    examples: ["Cookbook Reviews", "Kitchen Equipment Articles", "Food History Articles", "Random Bookmarks"]
+    precedence: 0  # Highest precedence - if it's not a recipe, categorize it as such
+    
   Breakfast:
     description: "Foods primarily intended for breakfast consumption"
     criteria:
@@ -11,7 +21,17 @@ categories:
       - "Egg dishes for breakfast (scrambled, omelets, frittatas)"
       - "Breakfast meats and sides"
     examples: ["Pancakes", "Overnight Oats", "Breakfast Burrito", "Coffee Cake"]
-    precedence: 1  # Highest precedence - breakfast items stay in breakfast
+    precedence: 1  # Second highest precedence - breakfast items stay in breakfast
+    
+  Desserts:
+    description: "Sweet dishes intended for dessert"
+    criteria:
+      - "Cakes, pies, and sweet pastries"
+      - "Cookies and sweet baked goods"
+      - "Ice cream and frozen desserts"
+      - "Puddings and sweet treats"
+    examples: ["Chocolate Cake", "Apple Pie", "Chocolate Chip Cookies", "Ice Cream"]
+    precedence: 2  # Third highest precedence
     
   Baking:
     description: "Bread, rolls, and yeasted/quick bread items (not desserts)"
@@ -79,19 +99,10 @@ categories:
       - "Small plates and finger foods"
     examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs"]
     precedence: 5
-    
-  Desserts:
-    description: "Sweet dishes intended for dessert"
-    criteria:
-      - "Cakes, pies, and sweet pastries"
-      - "Cookies and sweet baked goods"
-      - "Ice cream and frozen desserts"
-      - "Puddings and sweet treats"
-    examples: ["Chocolate Cake", "Apple Pie", "Chocolate Chip Cookies", "Ice Cream"]
-    precedence: 2  # Higher than most, but breakfast takes precedence
 
 # Special Notes:
 # - Precedence determines conflict resolution (lower number = higher precedence)
+# - "Not a Recipe" has highest precedence - always wins if content is not food-related
 # - Breakfast items always stay in Breakfast regardless of other characteristics
 # - Sweet breakfast items (coffee cake, muffins) go in Breakfast, not Desserts
 # - Savory baking (bread, rolls) goes in Baking, not based on when consumed
