@@ -1,7 +1,7 @@
 """Main CLI entry point for Notion Recipe Organizer.
 
-Version: v3
-Last updated: Database operations with enhanced testing and extraction
+Version: v4
+Last updated: Fixed dry-run display logic and default record limits
 """
 
 import json
@@ -189,6 +189,13 @@ def extract(
 
     console.print("[bold blue]📥 Extracting Recipe Data[/bold blue]")
 
+    # Set smart defaults for dry-run mode
+    if dry_run and max_records is None:
+        max_records = 3
+        console.print(
+            "[dim]ℹ️  Dry-run mode: defaulting to 3 records (use --max-records to override)[/dim]"
+        )
+
     # Validate config
     try:
         config.validate_required()
@@ -221,7 +228,9 @@ def extract(
     console.print(f"✅ Connected to database: [bold green]{db_title}[/bold green]")
 
     # Extract database records
-    console.print(f"\n[bold blue]📋 Extracting records...[/bold blue]")
+    console.print(
+        f"\n[bold blue]📋 Extracting records{f' (max: {max_records})' if max_records else ''}...[/bold blue]"
+    )
 
     records = notion_client.get_database_records(db_id, max_records=max_records)
     recipes_data = []
@@ -242,8 +251,10 @@ def extract(
     console.print(f"✅ Extracted {len(recipes_data)} recipe records")
 
     if dry_run:
-        console.print("\n[yellow]🔍 Dry run - showing first 3 records:[/yellow]")
-        for i, recipe in enumerate(recipes_data[:3]):
+        console.print(
+            f"\n[yellow]🔍 Dry run - showing all {len(recipes_data)} extracted records:[/yellow]"
+        )
+        for i, recipe in enumerate(recipes_data):
             title = recipe.get("title", "Untitled")
             url = recipe.get("url", "No URL")
             tags = recipe.get("tags", [])
@@ -275,4 +286,3 @@ def extract(
 
 if __name__ == "__main__":
     cli()
-
