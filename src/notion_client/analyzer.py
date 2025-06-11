@@ -17,6 +17,7 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..config import config
+from .config_loader import ConfigLoader
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -139,27 +140,146 @@ class RecipeAnalyzer:
             console.print(domain_table)
 
     def categorize_recipes_llm(
-        self, recipe_data: Dict[str, Any], sample_size: Optional[int] = None
+        self,
+        recipe_data: Dict[str, Any],
+        sample_size: Optional[int] = None,
+        start_index: Optional[int] = None,
+        end_index: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        batch_delay: float = 0,
+        timeout: int = 30,
     ) -> Dict[str, Any]:
         """Use LLM to categorize recipes based on titles and content."""
         records = recipe_data.get("records", [])
 
-        # Sample recipes if requested
-        if sample_size:
+        # Apply range filtering first
+        if start_index is not None or end_index is not None:
+            start_idx = start_index or 0
+            end_idx = end_index or len(records)
+            records = (
+                records[start_idx : end_idx + 1]
+                if end_index is not None
+                else records[start_idx:]
+            )
+
+        # Apply sample size (for backward compatibility)
+        elif sample_size:
             records = records[:sample_size]
 
+        total_recipes = len(records)
+
         categorization_results = {
-            "total_analyzed": len(records),
+            "total_analyzed": 0,
+            "total_attempted": total_recipes,
             "categorizations": [],
             "category_distribution": defaultdict(int),
             "cuisine_distribution": defaultdict(int),
             "dietary_tags_distribution": defaultdict(int),
+            "usage_tags_distribution": defaultdict(int),
+            "failed_analyses": [],
+            "processing_info": {
+                "start_index": start_index or 0,
+                "end_index": end_index,
+                "batch_size": batch_size,
+                "timeout": timeout,
+            },
         }
 
         console.print(
-            f"\n[bold blue]🤖 Analyzing {len(records)} recipes with LLM...[/bold blue]"
+            f"\n[bold blue]🤖 Analyzing {total_recipes} recipes with LLM...[/bold blue]"
         )
 
+        if start_index is not None or end_index is not None:
+            range_info = f"Range: {start_index or 0} to {end_index or len(recipe_data.get('records', [])) - 1}"
+            console.print(f"[dim]{range_info}[/dim]")
+
+        if batch_size:
+            num_batches = (
+                total_recipes + batch_size - 1
+            ) // batch_size  # Ceiling division
+            console.print(
+                f"[dim]Processing in {num_batches} batches of {batch_size} recipes[/dim]"
+            )
+            if batch_delay > 0:
+                console.print(f"[dim]{batch_delay}s delay between batches[/dim]")
+
+        # Process in batches or all at once
+        if batch_size and batch_size < total_recipes:
+            self._process_in_batches(
+                records,
+                categorization_results,
+                batch_size,
+                batch_delay,
+                timeout,
+                start_index or 0,
+            )
+        else:
+            self._process_single_batch(
+                records, categorization_results, timeout, start_index or 0
+            )
+
+        return categorization_results
+
+    def _process_in_batches(
+        self,
+        records: List[Dict],
+        results: Dict,
+        batch_size: int,
+        batch_delay: float,
+        timeout: int,
+        start_offset: int,
+    ) -> None:
+        """Process recipes in batches with delays."""
+        import time
+
+        num_batches = (len(records) + batch_size - 1) // batch_size
+
+        for batch_num in range(num_batches):
+            start_idx = batch_num * batch_size
+            end_idx = min(start_idx + batch_size, len(records))
+            batch_records = records[start_idx:end_idx]
+
+            actual_start_idx = start_offset + start_idx
+            actual_end_idx = start_offset + end_idx - 1
+
+            console.print(
+                f"\n[bold cyan]Batch {batch_num + 1}/{num_batches}: Recipes {actual_start_idx}-{actual_end_idx} ({len(batch_records)} recipes)[/bold cyan]"
+            )
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                task = progress.add_task(
+                    f"Processing batch {batch_num + 1}...", total=len(batch_records)
+                )
+
+                for i, record in enumerate(batch_records):
+                    recipe_idx = actual_start_idx + i
+                    progress.update(
+                        task,
+                        advance=1,
+                        description=f"Analyzing recipe {recipe_idx} ({i + 1}/{len(batch_records)})",
+                    )
+
+                    self._analyze_and_store_recipe(record, results, timeout, recipe_idx)
+
+            console.print(
+                f"✅ Batch {batch_num + 1} complete: {len(batch_records)} recipes processed"
+            )
+
+            # Delay between batches (except for last batch)
+            if batch_delay > 0 and batch_num < num_batches - 1:
+                console.print(
+                    f"[dim]⏳ Waiting {batch_delay}s before next batch...[/dim]"
+                )
+                time.sleep(batch_delay)
+
+    def _process_single_batch(
+        self, records: List[Dict], results: Dict, timeout: int, start_offset: int
+    ) -> None:
+        """Process all recipes in a single batch."""
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -168,95 +288,68 @@ class RecipeAnalyzer:
             task = progress.add_task("Analyzing recipes...", total=len(records))
 
             for i, record in enumerate(records):
+                recipe_idx = start_offset + i
                 progress.update(
                     task,
                     advance=1,
-                    description=f"Analyzing recipe {i + 1}/{len(records)}",
+                    description=f"Analyzing recipe {recipe_idx} ({i + 1}/{len(records)})",
                 )
 
-                title = record.get("title", "Untitled")
-                existing_tags = record.get("tags", [])
+                self._analyze_and_store_recipe(record, results, timeout, recipe_idx)
 
-                # Create prompt for LLM analysis
-                categorization = self._analyze_single_recipe(title, existing_tags)
+    def _analyze_and_store_recipe(
+        self, record: Dict, results: Dict, timeout: int, recipe_idx: int
+    ) -> None:
+        """Analyze a single recipe and store results."""
+        title = record.get("title", "Untitled")
+        existing_tags = record.get("tags", [])
 
-                if categorization:
-                    categorization["original_title"] = title
-                    categorization["existing_tags"] = existing_tags
-                    categorization["record_id"] = record.get("record_id", "")
+        # Analyze recipe with timeout and error handling
+        categorization = self._analyze_single_recipe(
+            title, existing_tags, timeout, recipe_idx
+        )
 
-                    categorization_results["categorizations"].append(categorization)
+        if categorization:
+            categorization["original_title"] = title
+            categorization["existing_tags"] = existing_tags
+            categorization["record_id"] = record.get("record_id", "")
+            categorization["recipe_index"] = recipe_idx
 
-                    # Update distributions
-                    if categorization.get("primary_category"):
-                        categorization_results["category_distribution"][
-                            categorization["primary_category"]
-                        ] += 1
-                    if categorization.get("cuisine_type"):
-                        categorization_results["cuisine_distribution"][
-                            categorization["cuisine_type"]
-                        ] += 1
-                    for tag in categorization.get("dietary_tags", []):
-                        categorization_results["dietary_tags_distribution"][tag] += 1
+            results["categorizations"].append(categorization)
+            results["total_analyzed"] += 1
 
-        return categorization_results
+            # Update distributions
+            if categorization.get("primary_category"):
+                results["category_distribution"][
+                    categorization["primary_category"]
+                ] += 1
+            if categorization.get("cuisine_type"):
+                results["cuisine_distribution"][categorization["cuisine_type"]] += 1
+            for tag in categorization.get("dietary_tags", []):
+                results["dietary_tags_distribution"][tag] += 1
+            for tag in categorization.get("usage_tags", []):
+                results["usage_tags_distribution"][tag] += 1
+        else:
+            # Record failed analysis
+            results["failed_analyses"].append(
+                {
+                    "recipe_index": recipe_idx,
+                    "title": title,
+                    "existing_tags": existing_tags,
+                }
+            )
 
     def _analyze_single_recipe(
-        self, title: str, existing_tags: List[str]
+        self,
+        title: str,
+        existing_tags: List[str],
+        timeout: int = 30,
+        recipe_idx: Optional[int] = None,
     ) -> Optional[Dict[str, Any]]:
-        """Analyze a single recipe using LLM."""
-        prompt = f"""
-Analyze this recipe and categorize it according to the schema below.
-
-Recipe Title: "{title}"
-Existing Tags: {existing_tags if existing_tags else "None"}
-
-Please categorize this recipe using the following schema:
-
-PRIMARY CATEGORY (choose exactly one):
-- Breakfast
-- Beef
-- Chicken  
-- Pork
-- Seafood
-- Vegetarian
-- Baking
-- Sides & Appetizers
-- Desserts
-
-CUISINE TYPE (choose one if applicable, or "Other"):
-- Mexican
-- Italian
-- American
-- Asian
-- Mediterranean
-- Indian
-- French
-- Other
-
-DIETARY TAGS (select all that apply):
-- Food Allergy Safe
-- Vegetarian
-- Vegan
-- Gluten-Free
-- Dairy-Free
-- Low-Carb
-- Keto
-- Quick & Easy (under 30 minutes)
-- One Pot
-
-CONFIDENCE (1-5 scale):
-Rate your confidence in this categorization from 1 (uncertain) to 5 (very confident).
-
-Respond in this exact JSON format:
-{{
-    "primary_category": "category_name",
-    "cuisine_type": "cuisine_name_or_Other",
-    "dietary_tags": ["tag1", "tag2"],
-    "confidence": 4,
-    "reasoning": "Brief explanation of your categorization choices"
-}}
-"""
+        """Analyze a single recipe using LLM with timeout and error handling."""
+        # Load configuration and build prompt
+        config_loader = ConfigLoader()
+        prompt = self._build_prompt_from_config(title, existing_tags, config_loader)
 
         try:
             response = self.openai_client.chat.completions.create(
@@ -270,6 +363,7 @@ Respond in this exact JSON format:
                 ],
                 temperature=0.1,
                 max_tokens=500,
+                timeout=timeout,  # Add timeout
             )
 
             response_text = response.choices[0].message.content.strip()
@@ -278,31 +372,115 @@ Respond in this exact JSON format:
             try:
                 return json.loads(response_text)
             except json.JSONDecodeError:
-                logger.warning(f"Invalid JSON response for '{title}': {response_text}")
+                logger.warning(
+                    f"Invalid JSON response for recipe {recipe_idx} '{title}': {response_text}"
+                )
                 return None
 
         except Exception as e:
-            logger.error(f"LLM analysis failed for '{title}': {e}")
+            error_msg = f"LLM analysis failed for recipe {recipe_idx} '{title}': {e}"
+            if "timeout" in str(e).lower():
+                logger.error(f"Timeout ({timeout}s) for recipe {recipe_idx} '{title}'")
+            else:
+                logger.error(error_msg)
             return None
+
+    def _build_prompt_from_config(
+        self, title: str, existing_tags: List[str], config_loader: ConfigLoader
+    ) -> str:
+        """Build LLM prompt from YAML configuration files."""
+        # Load the base prompt template
+        base_prompt_path = Path("config/prompts/base_prompt.txt")
+
+        if not base_prompt_path.exists():
+            # Fallback to hardcoded prompt if template file doesn't exist
+            return self._build_fallback_prompt(title, existing_tags)
+
+        try:
+            with open(base_prompt_path, "r") as f:
+                template = f.read()
+
+            # Replace template variables with actual content
+            formatted_prompt = template.replace("{{recipe_title}}", title)
+            formatted_prompt = formatted_prompt.replace(
+                "{{existing_tags}}", str(existing_tags) if existing_tags else "None"
+            )
+            formatted_prompt = formatted_prompt.replace(
+                "{{primary_categories}}", config_loader.format_categories_for_prompt()
+            )
+            formatted_prompt = formatted_prompt.replace(
+                "{{cuisine_types}}", config_loader.format_cuisines_for_prompt()
+            )
+            formatted_prompt = formatted_prompt.replace(
+                "{{dietary_tags}}", config_loader.format_dietary_tags_for_prompt()
+            )
+            formatted_prompt = formatted_prompt.replace(
+                "{{usage_tags}}", config_loader.format_usage_tags_for_prompt()
+            )
+            formatted_prompt = formatted_prompt.replace(
+                "{{conflict_rules}}", config_loader.format_conflict_rules_for_prompt()
+            )
+
+            return formatted_prompt
+
+        except Exception as e:
+            logger.warning(f"Failed to load prompt template: {e}, using fallback")
+            return self._build_fallback_prompt(title, existing_tags)
+
+    def _build_fallback_prompt(self, title: str, existing_tags: List[str]) -> str:
+        """Fallback prompt if YAML config system fails."""
+        return f"""
+Analyze this recipe and categorize it:
+
+Recipe Title: "{title}"
+Existing Tags: {existing_tags if existing_tags else "None"}
+
+PRIMARY CATEGORY (choose exactly one):
+- Breakfast, Beef, Chicken, Pork, Seafood, Vegetarian, Baking, Sides & Appetizers, Desserts
+
+CUISINE TYPE: Mexican, Italian, Asian, American, Mediterranean, Indian, French, Other
+
+DIETARY TAGS: Food Allergy Safe, Vegetarian, Vegan, Gluten-Free, Dairy-Free, Low-Carb, Keto, Quick & Easy, One Pot, Make Ahead
+
+USAGE TAGS: Want to Try, Holiday/Special Occasion
+
+Respond in JSON format:
+{{
+    "primary_category": "category_name",
+    "cuisine_type": "cuisine_name_or_Other",
+    "dietary_tags": ["tag1", "tag2"],
+    "usage_tags": ["tag1", "tag2"],
+    "confidence": 4,
+    "reasoning": "Brief explanation"
+}}
+"""
 
     def display_categorization_results(self, results: Dict[str, Any]) -> None:
         """Display categorization results in a nice format."""
         console.print(f"\n[bold blue]🎯 LLM Categorization Results[/bold blue]")
         console.print(
-            f"Analyzed: [bold green]{results['total_analyzed']}[/bold green] recipes"
+            f"Analyzed: [bold green]{results['total_analyzed']}[/bold green] / {results['total_attempted']} recipes"
         )
+
+        # Show failed analyses if any
+        if results["failed_analyses"]:
+            console.print(
+                f"Failed: [bold red]{len(results['failed_analyses'])}[/bold red] recipes"
+            )
+            console.print("[dim]Check logs for timeout or error details[/dim]")
 
         # Primary category distribution
         console.print("\n[bold blue]📂 Primary Category Distribution[/bold blue]")
         category_table = Table()
         category_table.add_column("Category", style="cyan")
         category_table.add_column("Count", style="green")
-        category_table.add_column("% of Total", style="yellow")
+        category_table.add_column("% of Analyzed", style="yellow")
 
         total = results["total_analyzed"]
-        for category, count in sorted(results["category_distribution"].items()):
-            percentage = count / total * 100
-            category_table.add_row(category, str(count), f"{percentage:.1f}%")
+        if total > 0:
+            for category, count in sorted(results["category_distribution"].items()):
+                percentage = count / total * 100
+                category_table.add_row(category, str(count), f"{percentage:.1f}%")
 
         console.print(category_table)
 
@@ -337,6 +515,22 @@ Respond in this exact JSON format:
                 dietary_table.add_row(tag, str(count))
 
             console.print(dietary_table)
+
+        # Usage tags
+        if results["usage_tags_distribution"]:
+            console.print("\n[bold blue]📋 Usage Tags Distribution[/bold blue]")
+            usage_table = Table()
+            usage_table.add_column("Usage Tag", style="cyan")
+            usage_table.add_column("Count", style="green")
+
+            for tag, count in sorted(
+                results["usage_tags_distribution"].items(),
+                key=lambda x: x[1],
+                reverse=True,
+            ):
+                usage_table.add_row(tag, str(count))
+
+            console.print(usage_table)
 
     def save_analysis_results(
         self, stats: Dict[str, Any], categorization: Dict[str, Any], output_path: Path

@@ -1,7 +1,7 @@
 """Main CLI entry point for Notion Recipe Organizer.
 
-Version: v5
-Last updated: Added LLM-powered recipe analysis capabilities
+Version: v6
+Last updated: Added batch processing, range specification, and timeout controls
 """
 
 import json
@@ -298,6 +298,15 @@ def extract(
     type=int,
     help="Number of recipes to analyze with LLM (for testing)",
 )
+@click.option("--start-index", type=int, help="Start analysis from this recipe index")
+@click.option("--end-index", type=int, help="End analysis at this recipe index")
+@click.option("--batch-size", type=int, help="Process recipes in batches of this size")
+@click.option(
+    "--batch-delay", type=float, default=0, help="Delay in seconds between batches"
+)
+@click.option(
+    "--timeout", type=int, default=30, help="Timeout for individual LLM calls (seconds)"
+)
 @click.option(
     "--use-llm", is_flag=True, help="Enable LLM-powered categorization analysis"
 )
@@ -306,12 +315,25 @@ def analyze(
     input_file: Optional[str],
     output: Optional[str],
     sample_size: Optional[int],
+    start_index: Optional[int],
+    end_index: Optional[int],
+    batch_size: Optional[int],
+    batch_delay: float,
+    timeout: int,
     use_llm: bool,
     basic_only: bool,
 ):
     """Analyze extracted recipe data and suggest categorizations."""
 
     console.print("[bold blue]📊 Analyzing Recipe Data[/bold blue]")
+
+    # Validate parameter combinations
+    if sample_size and (start_index is not None or end_index is not None):
+        console.print(
+            "[yellow]⚠️  --sample-size cannot be used with --start-index or --end-index[/yellow]"
+        )
+        console.print("Using range specification, ignoring --sample-size")
+        sample_size = None
 
     # Determine input file
     if not input_file:
@@ -331,6 +353,23 @@ def analyze(
     if not recipe_data:
         return
 
+    # Show processing parameters
+    total_recipes = len(recipe_data.get("records", []))
+    if start_index is not None or end_index is not None:
+        start_idx = start_index or 0
+        end_idx = end_index or total_recipes - 1
+        console.print(f"[dim]Processing range: {start_idx} to {end_idx}[/dim]")
+    elif sample_size:
+        console.print(f"[dim]Sample mode: processing first {sample_size} recipes[/dim]")
+
+    if batch_size:
+        console.print(
+            f"[dim]Batch processing: {batch_size} recipes per batch, {batch_delay}s delay[/dim]"
+        )
+
+    if use_llm:
+        console.print(f"[dim]LLM timeout: {timeout} seconds per recipe[/dim]")
+
     # Run basic statistics analysis
     console.print("\n[bold blue]🔍 Running Basic Analysis...[/bold blue]")
     basic_stats = analyzer.analyze_basic_stats(recipe_data)
@@ -343,13 +382,14 @@ def analyze(
         try:
             config.validate_required()  # Check Azure OpenAI config
 
-            if sample_size:
-                console.print(
-                    f"\n[yellow]ℹ️  Sample mode: analyzing {sample_size} recipes[/yellow]"
-                )
-
             categorization_results = analyzer.categorize_recipes_llm(
-                recipe_data, sample_size
+                recipe_data=recipe_data,
+                sample_size=sample_size,
+                start_index=start_index,
+                end_index=end_index,
+                batch_size=batch_size,
+                batch_delay=batch_delay,
+                timeout=timeout,
             )
             analyzer.display_categorization_results(categorization_results)
 
@@ -387,13 +427,16 @@ def analyze(
         console.print(
             "• Run with [bold cyan]--use-llm[/bold cyan] to get AI-powered categorization suggestions"
         )
-    if sample_size:
-        console.print(
-            "• Remove [bold cyan]--sample-size[/bold cyan] to analyze all recipes"
-        )
+    if sample_size or (start_index is not None and end_index is not None):
+        console.print("• Remove range/sample limits to analyze all recipes")
     if basic_stats["recipes_with_tags"] > 0:
         console.print(
             f"• You have {basic_stats['recipes_with_tags']} recipes with existing tags to preserve"
+        )
+    if categorization_results and categorization_results.get("failed_analyses"):
+        failed_count = len(categorization_results["failed_analyses"])
+        console.print(
+            f"• [yellow]{failed_count} recipes failed analysis - consider increasing --timeout[/yellow]"
         )
 
     console.print("\n[bold green]🎉 Analysis completed![/bold green]")
@@ -401,4 +444,3 @@ def analyze(
 
 if __name__ == "__main__":
     cli()
-
