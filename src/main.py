@@ -1,7 +1,7 @@
 """Main CLI entry point for Notion Recipe Organizer.
 
-Version: v4
-Last updated: Fixed dry-run display logic and default record limits
+Version: v5
+Last updated: Added LLM-powered recipe analysis capabilities
 """
 
 import json
@@ -17,6 +17,7 @@ from rich.table import Table
 
 from .config import config
 from .notion_client.client import NotionClient
+from .notion_client.analyzer import RecipeAnalyzer
 
 console = Console()
 
@@ -284,5 +285,120 @@ def extract(
         console.print(f"📊 Database schema included for analysis")
 
 
+@cli.command()
+@click.option(
+    "--input",
+    "input_file",
+    type=click.Path(exists=True),
+    help="Input JSON file with extracted recipes",
+)
+@click.option("--output", type=click.Path(), help="Output file for analysis results")
+@click.option(
+    "--sample-size",
+    type=int,
+    help="Number of recipes to analyze with LLM (for testing)",
+)
+@click.option(
+    "--use-llm", is_flag=True, help="Enable LLM-powered categorization analysis"
+)
+@click.option("--basic-only", is_flag=True, help="Run only basic statistics analysis")
+def analyze(
+    input_file: Optional[str],
+    output: Optional[str],
+    sample_size: Optional[int],
+    use_llm: bool,
+    basic_only: bool,
+):
+    """Analyze extracted recipe data and suggest categorizations."""
+
+    console.print("[bold blue]📊 Analyzing Recipe Data[/bold blue]")
+
+    # Determine input file
+    if not input_file:
+        input_file = config.data_dir / "raw" / "recipes.json"
+        if not input_file.exists():
+            console.print(f"❌ No input file found at {input_file}")
+            console.print("Run 'extract' command first or specify --input path")
+            return
+    else:
+        input_file = Path(input_file)
+
+    # Initialize analyzer
+    analyzer = RecipeAnalyzer()
+
+    # Load recipe data
+    recipe_data = analyzer.load_recipes(input_file)
+    if not recipe_data:
+        return
+
+    # Run basic statistics analysis
+    console.print("\n[bold blue]🔍 Running Basic Analysis...[/bold blue]")
+    basic_stats = analyzer.analyze_basic_stats(recipe_data)
+    analyzer.display_basic_stats(basic_stats)
+
+    categorization_results = None
+
+    # Run LLM analysis if requested and not basic-only
+    if use_llm and not basic_only:
+        try:
+            config.validate_required()  # Check Azure OpenAI config
+
+            if sample_size:
+                console.print(
+                    f"\n[yellow]ℹ️  Sample mode: analyzing {sample_size} recipes[/yellow]"
+                )
+
+            categorization_results = analyzer.categorize_recipes_llm(
+                recipe_data, sample_size
+            )
+            analyzer.display_categorization_results(categorization_results)
+
+        except ValueError as e:
+            console.print(f"❌ Configuration Error: [bold red]{e}[/bold red]")
+            console.print("LLM analysis requires Azure OpenAI configuration")
+            return
+        except Exception as e:
+            console.print(f"❌ LLM Analysis Error: [bold red]{e}[/bold red]")
+            return
+
+    elif use_llm and basic_only:
+        console.print("[yellow]⚠️  --basic-only flag overrides --use-llm[/yellow]")
+
+    # Save results if requested
+    if output or not basic_only:
+        output_path = (
+            Path(output)
+            if output
+            else config.data_dir / "processed" / "analysis_report.json"
+        )
+
+        # Create a summary even without LLM analysis
+        if not categorization_results:
+            categorization_results = {
+                "total_analyzed": 0,
+                "note": "LLM analysis not performed. Use --use-llm flag to enable.",
+            }
+
+        analyzer.save_analysis_results(basic_stats, categorization_results, output_path)
+
+    # Show recommendations
+    console.print("\n[bold blue]💡 Next Steps[/bold blue]")
+    if not use_llm:
+        console.print(
+            "• Run with [bold cyan]--use-llm[/bold cyan] to get AI-powered categorization suggestions"
+        )
+    if sample_size:
+        console.print(
+            "• Remove [bold cyan]--sample-size[/bold cyan] to analyze all recipes"
+        )
+    if basic_stats["recipes_with_tags"] > 0:
+        console.print(
+            f"• You have {basic_stats['recipes_with_tags']} recipes with existing tags to preserve"
+        )
+
+    console.print("\n[bold green]🎉 Analysis completed![/bold green]")
+
+
 if __name__ == "__main__":
     cli()
+
