@@ -1,0 +1,94 @@
+# Dietary Tags Configuration
+# Version: v1
+# Multi-select tags - recipes can have multiple dietary tags
+
+dietary_tags:
+  Food Allergy Safe:
+    description: "Recipes safe for someone with multiple food allergies"
+    criteria:
+      - "Free from common allergens (nuts, shellfish, etc.)"
+      - "Simple ingredient lists without potential allergen triggers"
+      - "Recipes that have been verified as safe for specific allergies"
+    notes: "This is a high-priority tag for family use - be conservative in assignment"
+    
+  Vegetarian:
+    description: "Contains no meat, poultry, or seafood"
+    criteria:
+      - "No beef, pork, chicken, turkey, fish, or shellfish"
+      - "May contain dairy products and eggs"
+      - "Plant-based proteins are acceptable"
+    examples: ["Vegetable Pasta", "Cheese Pizza", "Egg Salad"]
+    
+  Vegan:
+    description: "Contains no animal products whatsoever"
+    criteria:
+      - "No meat, poultry, seafood, dairy, eggs, or honey"
+      - "Only plant-based ingredients"
+      - "No animal-derived additives or processing aids"
+    examples: ["Vegetable Stir Fry", "Fruit Salad", "Quinoa Bowl"]
+    
+  Gluten-Free:
+    description: "Contains no wheat, barley, rye, or gluten-containing ingredients"
+    criteria:
+      - "No wheat flour, bread, pasta, or obvious gluten sources"
+      - "Be cautious about hidden gluten (soy sauce, seasonings)"
+      - "Rice, corn, and naturally gluten-free grains are acceptable"
+    examples: ["Rice Dishes", "Corn Tortilla Tacos", "Most Meat and Vegetable Dishes"]
+    
+  Dairy-Free:
+    description: "Contains no milk, cheese, butter, or dairy products"
+    criteria:
+      - "No milk, cream, cheese, butter, yogurt"
+      - "No dairy-derived ingredients"
+      - "Plant-based milk alternatives are acceptable"
+    examples: ["Most Meat Dishes", "Dairy-Free Baked Goods", "Vegetable Dishes"]
+    
+  Low-Carb:
+    description: "Low in carbohydrates, suitable for low-carb diets"
+    criteria:
+      - "Minimal bread, pasta, rice, potatoes, or high-carb ingredients"
+      - "Focus on proteins, vegetables, and healthy fats"
+      - "Typically under 20-30g carbs per serving"
+    examples: ["Grilled Chicken Salad", "Zucchini Noodles", "Egg-based Dishes"]
+    
+  Keto:
+    description: "Very low carb, high fat, suitable for ketogenic diet"
+    criteria:
+      - "Extremely low carbohydrates (typically under 5-10g per serving)"
+      - "High in healthy fats"
+      - "Moderate protein content"
+      - "No grains, most fruits, or starchy vegetables"
+    examples: ["Avocado Salad", "Bacon and Eggs", "Cauliflower Rice Dishes"]
+    
+  Quick & Easy:
+    description: "Can be prepared in 30 minutes or less"
+    criteria:
+      - "Total time from start to finish is 30 minutes or less"
+      - "Minimal prep work required"
+      - "Simple cooking techniques"
+      - "Few ingredients or steps"
+    examples: ["Scrambled Eggs", "Simple Pasta", "Quick Stir Fry"]
+    
+  One Pot:
+    description: "Cooked in a single pot, pan, or cooking vessel"
+    criteria:
+      - "All main cooking happens in one vessel"
+      - "Minimal dishes to clean"
+      - "May include sheet pan meals"
+      - "Reduces cleanup and simplifies cooking"
+    examples: ["One Pot Pasta", "Sheet Pan Chicken", "Skillet Meals"]
+    
+  Make Ahead:
+    description: "Can be prepared in advance or stores/reheats well"
+    criteria:
+      - "Suitable for meal prep"
+      - "Tastes good when reheated"
+      - "Can be partially or fully prepared ahead of time"
+      - "Freezes well or has good storage properties"
+    examples: ["Casseroles", "Soups", "Marinated Meats", "Baked Goods"]
+
+# Guidelines:
+# - Be conservative with Food Allergy Safe - only assign if clearly safe
+# - Quick & Easy should be realistic cooking times, not just active prep time
+# - One Pot includes sheet pan meals and other single-vessel cooking methods
+# - Make Ahead focuses on practical meal planning benefits

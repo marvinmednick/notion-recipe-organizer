@@ -1,0 +1,97 @@
+# Primary Categories Configuration
+# Version: v1
+# These are mutually exclusive - each recipe gets exactly one primary category
+
+categories:
+  Breakfast:
+    description: "Foods primarily intended for breakfast consumption"
+    criteria:
+      - "Traditional breakfast items (pancakes, waffles, oatmeal, cereal)"
+      - "Breakfast pastries (muffins, scones, coffee cake)"
+      - "Egg dishes for breakfast (scrambled, omelets, frittatas)"
+      - "Breakfast meats and sides"
+    examples: ["Pancakes", "Overnight Oats", "Breakfast Burrito", "Coffee Cake"]
+    precedence: 1  # Highest precedence - breakfast items stay in breakfast
+    
+  Baking:
+    description: "Bread, rolls, and yeasted/quick bread items (not desserts)"
+    criteria:
+      - "Bread (sandwich bread, artisan breads, sourdough)"
+      - "Rolls and buns (dinner rolls, hamburger buns)"
+      - "Biscuits and savory quick breads"
+      - "Pizza dough and flatbreads"
+    examples: ["Sourdough Bread", "Dinner Rolls", "Focaccia", "Biscuits"]
+    precedence: 3
+    
+  Beef:
+    description: "Dishes where beef is the primary protein"
+    criteria:
+      - "Steaks, roasts, and beef cuts as main ingredient"
+      - "Ground beef dishes (burgers, meatballs, casseroles)"
+      - "Beef stews and braises"
+    examples: ["Beef Stew", "Hamburgers", "Pot Roast", "Beef Tacos"]
+    precedence: 4
+    
+  Chicken:
+    description: "Dishes where chicken is the primary protein"
+    criteria:
+      - "Whole chicken or chicken parts as main ingredient"
+      - "Chicken breasts, thighs, wings as focus"
+      - "Ground chicken dishes"
+    examples: ["Roast Chicken", "Chicken Curry", "Buffalo Wings", "Chicken Salad"]
+    precedence: 4
+    
+  Pork:
+    description: "Dishes where pork is the primary protein"
+    criteria:
+      - "Pork chops, tenderloin, roasts"
+      - "Ham and bacon as main ingredient (not just flavoring)"
+      - "Ground pork dishes"
+      - "Sausage-based dishes where sausage is the main component"
+    examples: ["Pork Chops", "Ham Dinner", "Pulled Pork", "Sausage Pasta"]
+    precedence: 4
+    
+  Seafood:
+    description: "Dishes where fish or shellfish is the primary protein"
+    criteria:
+      - "Fish fillets, whole fish, or fish steaks as main ingredient"
+      - "Shellfish (shrimp, crab, lobster, mussels, etc.)"
+      - "Mixed seafood dishes"
+    examples: ["Salmon Fillet", "Shrimp Scampi", "Fish Tacos", "Crab Cakes"]
+    precedence: 4
+    
+  Vegetarian:
+    description: "Plant-based dishes or dishes where vegetables/grains are the main component"
+    criteria:
+      - "No meat, poultry, or seafood as main ingredients"
+      - "Vegetable-based main dishes"
+      - "Grain and legume-based meals"
+      - "Pasta dishes without meat"
+    examples: ["Vegetable Stir Fry", "Caprese Salad", "Lentil Curry", "Margherita Pizza"]
+    precedence: 4
+    
+  Sides & Appetizers:
+    description: "Dishes intended to accompany main courses or serve as starters"
+    criteria:
+      - "Side dishes (vegetables, starches, salads)"
+      - "Appetizers and hors d'oeuvres"
+      - "Dips and spreads"
+      - "Small plates and finger foods"
+    examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs"]
+    precedence: 5
+    
+  Desserts:
+    description: "Sweet dishes intended for dessert"
+    criteria:
+      - "Cakes, pies, and sweet pastries"
+      - "Cookies and sweet baked goods"
+      - "Ice cream and frozen desserts"
+      - "Puddings and sweet treats"
+    examples: ["Chocolate Cake", "Apple Pie", "Chocolate Chip Cookies", "Ice Cream"]
+    precedence: 2  # Higher than most, but breakfast takes precedence
+
+# Special Notes:
+# - Precedence determines conflict resolution (lower number = higher precedence)
+# - Breakfast items always stay in Breakfast regardless of other characteristics
+# - Sweet breakfast items (coffee cake, muffins) go in Breakfast, not Desserts
+# - Savory baking (bread, rolls) goes in Baking, not based on when consumed

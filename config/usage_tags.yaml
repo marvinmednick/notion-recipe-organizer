@@ -1,0 +1,71 @@
+# Usage & Personal Tags Configuration
+# Version: v1
+# These tags reflect personal usage patterns and preferences
+
+usage_tags:
+  Favorite:
+    description: "Recipes that are frequently made and loved by the family"
+    criteria:
+      - "Made regularly (monthly or more often)"
+      - "Family favorites that everyone enjoys"
+      - "Go-to recipes for specific occasions or needs"
+      - "Recipes you would recommend to others"
+    assignment: "manual"  # Should be manually assigned, not auto-detected
+    priority: "high"
+    
+  Tried & Tested:
+    description: "Recipes that have been made at least once successfully"
+    criteria:
+      - "Have actually cooked this recipe before"
+      - "Know it works and tastes good"
+      - "Have practical experience with the recipe"
+      - "Can vouch for the quality and instructions"
+    assignment: "manual"  # Should be manually assigned, not auto-detected
+    priority: "medium"
+    
+  Want to Try:
+    description: "Interesting recipes saved for future cooking"
+    criteria:
+      - "Looks appealing but haven't made yet"
+      - "Saved for a specific reason (interesting technique, ingredients, etc.)"
+      - "Planning to make when time/ingredients allow"
+    assignment: "auto"  # Can be auto-assigned to untagged recipes
+    priority: "low"
+    
+  Holiday/Special Occasion:
+    description: "Recipes primarily made for holidays or special events"
+    criteria:
+      - "Traditional holiday dishes"
+      - "Special occasion foods (birthdays, celebrations)"
+      - "Recipes that require more time/effort for special events"
+      - "Seasonal or celebration-specific dishes"
+    assignment: "auto"  # Can be detected from recipe names/content
+    priority: "medium"
+    examples: ["Christmas Cookies", "Thanksgiving Turkey", "Birthday Cake"]
+    
+  Family Recipe:
+    description: "Recipes that have been passed down or are family traditions"
+    criteria:
+      - "Handed down from family members"
+      - "Traditional family dishes"
+      - "Recipes with personal/family history"
+      - "Modified over time to family preferences"
+    assignment: "manual"  # Should be manually assigned
+    priority: "high"
+    
+  Experimental:
+    description: "Recipes that are variations or experiments in progress"
+    criteria:
+      - "Modified versions of existing recipes"
+      - "Testing new ingredients or techniques"
+      - "Work-in-progress recipes being refined"
+      - "Fusion or creative adaptations"
+    assignment: "manual"  # Should be manually assigned
+    priority: "low"
+
+# Usage Guidelines:
+# - Manual assignment tags should not be auto-assigned by LLM
+# - Auto assignment tags can be suggested by LLM based on content
+# - Priority affects how prominently these tags are displayed
+# - These tags help with workflow and personal organization
+# - Consider usage patterns when organizing recipe views

@@ -1,0 +1,93 @@
+# Conflict Resolution Rules
+# Version: v1
+# Rules for handling edge cases and conflicts in categorization
+
+primary_category_rules:
+  precedence_order:
+    # Lower number = higher precedence (wins conflicts)
+    1: Breakfast      # Highest precedence
+    2: Desserts      # Second highest
+    3: Baking        # Third highest  
+    4: [Beef, Chicken, Pork, Seafood, Vegetarian]  # Protein-based (equal precedence)
+    5: "Sides & Appetizers"  # Lowest precedence
+
+  specific_rules:
+    breakfast_precedence:
+      description: "Breakfast items always stay in Breakfast category"
+      examples:
+        - "Breakfast muffins go in Breakfast, not Baking"
+        - "Coffee cake goes in Breakfast, not Desserts"
+        - "Breakfast sausage dishes go in Breakfast, not Pork"
+      reasoning: "Meal timing is more important than ingredients for breakfast foods"
+      
+    dessert_vs_baking:
+      description: "Sweet items go to Desserts, bread items go to Baking"
+      examples:
+        - "Chocolate cake -> Desserts"
+        - "Dinner rolls -> Baking"
+        - "Sweet bread (like banana bread) -> Desserts if primarily sweet"
+      reasoning: "Intent and sweetness level determines category"
+      
+    protein_conflicts:
+      description: "When multiple proteins present, choose the primary/dominant one"
+      examples:
+        - "Chicken and beef stir fry -> whichever is more prominent"
+        - "Bacon in salad -> Vegetarian if bacon is just flavoring"
+        - "Surf and turf -> choose based on recipe focus"
+      reasoning: "Primary protein drives the categorization"
+      
+    vegetarian_edge_cases:
+      description: "Vegetarian category rules for edge cases"
+      examples:
+        - "Dishes with small amounts of meat as flavoring -> still meat category"
+        - "Pasta with meat sauce -> based on primary protein in sauce"
+        - "Salad with chicken -> Chicken category"
+      reasoning: "Any significant meat content moves it out of Vegetarian"
+
+cuisine_assignment_rules:
+  fusion_handling:
+    description: "How to handle fusion or multi-cultural dishes"
+    rule: "If one cuisine clearly dominates (>60% of flavors/techniques), use that cuisine. Otherwise use 'Other'"
+    examples:
+      - "Korean BBQ tacos -> Other (fusion)"
+      - "Americanized Chinese food -> Asian if techniques/flavors are clearly Asian"
+      - "Tex-Mex -> Mexican if predominantly Mexican flavors"
+      
+  simple_preparations:
+    description: "Basic preparations without strong cultural identity"
+    rule: "Simple grilled, roasted, or basic preparations should usually be 'Other'"
+    examples:
+      - "Grilled chicken with salt and pepper -> Other"
+      - "Basic roasted vegetables -> Other"
+      - "Simple pasta with olive oil -> Other (unless clearly Italian preparation)"
+
+dietary_tag_conflicts:
+  conservative_assignment:
+    description: "When in doubt, don't assign restrictive dietary tags"
+    rule: "Only assign dietary restriction tags when confident the recipe meets the criteria"
+    reasoning: "Better to miss a tag than incorrectly assign one that could cause issues"
+    
+  allergen_safety:
+    description: "Food Allergy Safe tag assignment"
+    rule: "Only assign if ingredients are clearly safe and recipe is simple enough to verify"
+    examples:
+      - "Complex recipes with many ingredients -> probably not Food Allergy Safe"
+      - "Simple recipes with clearly safe ingredients -> likely Food Allergy Safe"
+      - "Recipes with potential hidden allergens -> not Food Allergy Safe"
+
+usage_tag_guidelines:
+  auto_vs_manual:
+    description: "Which usage tags can be auto-assigned vs manual only"
+    auto_assignable: ["Want to Try", "Holiday/Special Occasion"]
+    manual_only: ["Favorite", "Tried & Tested", "Family Recipe", "Experimental"]
+    reasoning: "Personal experience tags must be manually assigned"
+    
+  default_assignment:
+    description: "Default tags for recipes without usage information"
+    rule: "Untagged recipes default to 'Want to Try' unless they clearly fit another category"
+
+# Meta Rules:
+# - When in doubt, choose the more general category
+# - Precedence rules are strict - higher precedence always wins
+# - Document any exceptions or edge cases for future reference
+# - These rules should be updated based on real-world categorization experience

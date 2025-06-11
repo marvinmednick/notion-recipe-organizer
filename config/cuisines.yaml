@@ -1,0 +1,82 @@
+# Cuisine Types Configuration  
+# Version: v1
+# Optional classification - recipes may have no specific cuisine type
+
+cuisines:
+  Mexican:
+    description: "Traditional and Mexican-inspired dishes"
+    indicators:
+      - "Uses ingredients like cilantro, lime, jalapeños, cumin, chili peppers"
+      - "Dishes like tacos, burritos, enchiladas, quesadillas"
+      - "Mexican cooking techniques and flavor profiles"
+      - "Salsas, guacamole, and Mexican-style sauces"
+    examples: ["Chicken Tacos", "Beef Enchiladas", "Guacamole", "Chiles Rellenos"]
+    
+  Italian:
+    description: "Traditional and Italian-inspired dishes"
+    indicators:
+      - "Uses ingredients like basil, oregano, parmesan, mozzarella, tomatoes"
+      - "Pasta dishes, pizza, risotto"
+      - "Italian cooking techniques and flavor profiles"
+      - "Olive oil, garlic, and herb-based preparations"
+    examples: ["Spaghetti Carbonara", "Margherita Pizza", "Risotto", "Osso Buco"]
+    
+  Asian:
+    description: "East Asian, Southeast Asian, and Asian-fusion dishes"
+    indicators:
+      - "Uses ingredients like soy sauce, ginger, garlic, sesame oil, rice vinegar"
+      - "Cooking techniques like stir-frying, steaming, quick cooking"
+      - "Chinese, Japanese, Thai, Korean, Vietnamese influences"
+      - "Rice or noodle-based dishes with Asian flavors"
+    examples: ["Chicken Stir Fry", "Pad Thai", "Sushi", "Korean BBQ"]
+    
+  American:
+    description: "Traditional American and comfort food dishes"
+    indicators:
+      - "Classic American comfort foods and regional specialties"
+      - "BBQ, grilled foods, and American cooking techniques"
+      - "Traditional holiday and family meal dishes"
+      - "Southern, Tex-Mex, and regional American cuisines"
+    examples: ["BBQ Ribs", "Mac and Cheese", "Apple Pie", "Fried Chicken"]
+    
+  Mediterranean:
+    description: "Mediterranean and Middle Eastern influenced dishes"
+    indicators:
+      - "Uses ingredients like olive oil, lemon, herbs, feta, olives"
+      - "Greek, Turkish, Lebanese, and Mediterranean influences"
+      - "Fresh vegetables, grains, and Mediterranean cooking styles"
+      - "Hummus, tzatziki, and Mediterranean flavor profiles"
+    examples: ["Greek Salad", "Hummus", "Lamb Gyros", "Mediterranean Quinoa Bowl"]
+    
+  Indian:
+    description: "Indian and Indian-inspired dishes"
+    indicators:
+      - "Uses spices like curry, turmeric, cumin, coriander, garam masala"
+      - "Indian cooking techniques and traditional dishes"
+      - "Curries, rice dishes, and Indian bread"
+      - "Complex spice blends and Indian flavor profiles"
+    examples: ["Chicken Curry", "Tikka Masala", "Biryani", "Naan Bread"]
+    
+  French:
+    description: "French and French-inspired dishes"
+    indicators:
+      - "Classic French cooking techniques and preparations"
+      - "Uses ingredients like butter, cream, wine, herbs de Provence"
+      - "Traditional French dishes and cooking methods"
+      - "Sophisticated preparation and French culinary traditions"
+    examples: ["Coq au Vin", "French Onion Soup", "Ratatouille", "Crème Brûlée"]
+    
+  Other:
+    description: "Dishes that don't fit clearly into other cuisine categories"
+    indicators:
+      - "Fusion dishes combining multiple cuisine influences"
+      - "Regional cuisines not covered by other categories"
+      - "Modern or innovative dishes without clear cultural identity"
+      - "Simple preparations without distinct cultural markers"
+    examples: ["Fusion Tacos", "Modern Grain Bowl", "Simple Grilled Vegetables"]
+
+# Guidelines:
+# - Choose "Other" if the dish doesn't clearly fit one specific cuisine
+# - Many American dishes may be better categorized as "Other" unless they're distinctly American
+# - Fusion dishes should generally be "Other" unless one cuisine clearly dominates
+# - Simple preparations (like grilled chicken) without cultural markers should be "Other"
