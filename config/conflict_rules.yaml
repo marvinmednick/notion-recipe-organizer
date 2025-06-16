@@ -128,3 +128,161 @@ usage_tag_guidelines:
 # - Non-recipe content always gets "Not a Recipe" regardless of subject matter
 # - Document any exceptions or edge cases for future reference
 # - These rules should be updated based on real-world categorization experience
+    #
+  # Conflict Resolution Rules
+# Version: v3
+# Rules for handling edge cases and conflicts in categorization
+
+primary_category_rules:
+  precedence_order:
+    # Lower number = higher precedence (wins conflicts)
+    0: "Not a Recipe"        # Highest precedence - completely unrelated content
+    1: "Cooking Reference"   # Second highest - cooking articles/references
+    2: Breakfast            # Third highest
+    3: Desserts            # Fourth highest
+    4: Baking              # Fifth highest  
+    5: [Beef, Chicken, Pork, Seafood, Vegetarian]  # Protein-based (equal precedence)
+    6: "Sides & Appetizers"  # Lowest precedence
+
+  specific_rules:
+    not_recipe_precedence:
+      description: "Completely unrelated content gets categorized as 'Not a Recipe'"
+      examples:
+        - "Books about non-food topics go to Not a Recipe"
+        - "Random links unrelated to cooking go to Not a Recipe"
+        - "General lifestyle articles without cooking focus go to Not a Recipe"
+      reasoning: "Only use for content completely unrelated to food/cooking"
+      
+    cooking_reference_precedence:
+      description: "Food-related content that isn't recipes gets 'Cooking Reference'"
+      examples:
+        - "Equipment reviews go to Cooking Reference"
+        - "Cooking technique articles go to Cooking Reference"
+        - "Food history articles go to Cooking Reference"
+        - "Kitchen tips and guides go to Cooking Reference"
+      reasoning: "Keeps cooking-related content in database but separate from recipes"
+      
+    ingredient_list_handling:
+      description: "Ingredient lists for specific dishes are treated as recipes"
+      examples:
+        - "Smoothie ingredient list -> treat as recipe (probably Breakfast or Vegetarian)"
+        - "Spice mix ingredients -> treat as recipe (probably Sides & Appetizers)"
+        - "Salad ingredient list -> treat as recipe (probably Vegetarian)"
+      reasoning: "Ingredient lists are recipe components even without detailed instructions"
+      
+    breakfast_precedence:
+      description: "Breakfast items always stay in Breakfast category"
+      examples:
+        - "Breakfast muffins go in Breakfast, not Baking"
+        - "Coffee cake goes in Breakfast, not Desserts"
+        - "Breakfast sausage dishes go in Breakfast, not Pork"
+        - "Breakfast smoothie ingredients go in Breakfast, not Vegetarian"
+      reasoning: "Meal timing is more important than ingredients for breakfast foods"
+      
+    dessert_vs_baking:
+      description: "Sweet items go to Desserts, bread items go to Baking"
+      examples:
+        - "Chocolate cake -> Desserts"
+        - "Dinner rolls -> Baking"
+        - "Sweet bread (like banana bread) -> Desserts if primarily sweet"
+      reasoning: "Intent and sweetness level determines category"
+      
+    protein_conflicts:
+      description: "When multiple proteins present, choose the primary/dominant one"
+      examples:
+        - "Chicken and beef stir fry -> whichever is more prominent"
+        - "Bacon in salad -> Vegetarian if bacon is just flavoring"
+        - "Surf and turf -> choose based on recipe focus"
+      reasoning: "Primary protein drives the categorization"
+      
+    vegetarian_edge_cases:
+      description: "Vegetarian category rules for edge cases"
+      examples:
+        - "Dishes with small amounts of meat as flavoring -> still meat category"
+        - "Pasta with meat sauce -> based on primary protein in sauce"
+        - "Salad with chicken -> Chicken category"
+        - "Smoothie ingredients with no animal products -> Vegetarian"
+      reasoning: "Any significant meat content moves it out of Vegetarian"
+
+content_quality_rules:
+  recipe_identification:
+    description: "How to determine if content is actually a recipe"
+    criteria:
+      - "Contains ingredient list (with or without detailed cooking instructions)"
+      - "Focused on preparing a specific food item or dish"
+      - "Has actionable components for making food"
+      - "Ingredient lists for specific preparations (smoothies, spice mixes, etc.)"
+    cooking_reference_indicators:
+      - "Articles about cooking techniques or methods"
+      - "Equipment recommendations and reviews"
+      - "Food history, culture, or educational content"
+      - "Kitchen tips and reference guides"
+      - "Cooking tutorials without specific recipes"
+    non_recipe_indicators:
+      - "Content completely unrelated to food or cooking"
+      - "General lifestyle articles without cooking focus"
+      - "Books or articles about non-culinary topics"
+      
+  title_evaluation:
+    description: "When to suggest title improvements"
+    needs_improvement:
+      - "Very long titles that are hard to scan"
+      - "Unclear or vague titles"
+      - "Titles that don't describe the actual dish or content"
+      - "Titles with excessive punctuation or formatting"
+    good_titles:
+      - "Clear, descriptive, and concise"
+      - "Identifies the main dish, technique, or content type"
+      - "Easy to understand and remember"
+      - "Appropriate length (under 80 characters preferred)"
+
+cuisine_assignment_rules:
+  fusion_handling:
+    description: "How to handle fusion or multi-cultural dishes"
+    rule: "If one cuisine clearly dominates (>60% of flavors/techniques), use that cuisine. Otherwise use 'Other'"
+    examples:
+      - "Korean BBQ tacos -> Other (fusion)"
+      - "Americanized Chinese food -> Asian if techniques/flavors are clearly Asian"
+      - "Tex-Mex -> Mexican if predominantly Mexican flavors"
+      
+  simple_preparations:
+    description: "Basic preparations without strong cultural identity"
+    rule: "Simple grilled, roasted, or basic preparations should usually be 'Other'"
+    examples:
+      - "Grilled chicken with salt and pepper -> Other"
+      - "Basic roasted vegetables -> Other"
+      - "Simple pasta with olive oil -> Other (unless clearly Italian preparation)"
+      - "Basic smoothie ingredients -> Other (unless cuisine-specific ingredients)"
+
+dietary_tag_conflicts:
+  conservative_assignment:
+    description: "When in doubt, don't assign restrictive dietary tags"
+    rule: "Only assign dietary restriction tags when confident the recipe meets the criteria"
+    reasoning: "Better to miss a tag than incorrectly assign one that could cause issues"
+    
+  allergen_safety:
+    description: "Food Allergy Safe tag assignment"
+    rule: "Only assign if ingredients are clearly safe and recipe is simple enough to verify"
+    examples:
+      - "Complex recipes with many ingredients -> probably not Food Allergy Safe"
+      - "Simple recipes with clearly safe ingredients -> likely Food Allergy Safe"
+      - "Recipes with potential hidden allergens -> not Food Allergy Safe"
+
+usage_tag_guidelines:
+  auto_vs_manual:
+    description: "Which usage tags can be auto-assigned vs manual only"
+    auto_assignable: ["Want to Try", "Holiday/Special Occasion"]
+    manual_only: ["Favorite", "Tried & Tested", "Family Recipe", "Experimental"]
+    reasoning: "Personal experience tags must be manually assigned"
+    
+  default_assignment:
+    description: "Default tags for recipes without usage information"
+    rule: "Untagged recipes default to 'Want to Try' unless they clearly fit another category"
+
+# Meta Rules:
+# - When in doubt, choose the more general category
+# - Precedence rules are strict - higher precedence always wins
+# - "Not a Recipe" only for completely unrelated content
+# - "Cooking Reference" for food-related articles and reference materials
+# - Ingredient lists (even without instructions) are recipes if for specific dishes
+# - Document any exceptions or edge cases for future reference

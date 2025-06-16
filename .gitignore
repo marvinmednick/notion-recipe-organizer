@@ -47,6 +47,9 @@ data/reports/*.csv
 *.log
 logs/
 
+# data output files
+data/
+
 # OS
 .DS_Store
 Thumbs.db
