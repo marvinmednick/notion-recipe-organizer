@@ -24,9 +24,9 @@ notion-recipe-organizer/
     └── __init__.py
 ```
 
-## Current Project Status: ✅ Phase 1.5 Complete!
+## Current Project Status: ✅ Phase 1.7 Complete!
 
-**Completed & Working:**
+**Phase 1.5 Completed & Working:**
 - ✅ Complete project setup and Notion API integration  
 - ✅ Database extraction functionality working
 - ✅ Basic statistical analysis implemented
@@ -38,9 +38,24 @@ notion-recipe-organizer/
 - ✅ **Progressive complexity CLI with smart defaults**
 - ✅ **Specialized reporting system (content issues, title improvements)**
 
-**Current Status:** Phase 1.5 Complete - Ready for Phase 2 (Database Schema Enhancement)
+**Phase 1.6 Completed & Working - Review System:**
+- ✅ **Interactive HTML Review Interface:** Visual categorization review with filtering/sorting
+- ✅ **CSV Export System:** Edit categorizations in spreadsheets with systematic import
+- ✅ **Corrections Tracking:** JSON-based system for documenting and applying fixes
+- ✅ **Review Summary Reports:** Statistical analysis of categorization quality
+- ✅ **Issue-Focused Views:** Specialized exports for problem items only
+- ✅ **Complete CLI Integration:** `review` and `apply-corrections` commands working
 
-**Production Status:** All analysis capabilities fully tested and working
+**Phase 1.7 Completed & Working - Refined Categorization:**
+- ✅ **Enhanced Recipe Detection:** Ingredient lists (smoothie ingredients, spice mixes) recognized as recipes
+- ✅ **New "Cooking Reference" Category:** Food-related articles/references properly classified
+- ✅ **Three-Tier Content Classification:** Not Recipe → Cooking Reference → Actual Recipes
+- ✅ **Improved Prompt Logic:** Better handling of edge cases and cooking content types
+- ✅ **Real-World Validation:** Based on systematic review feedback and database cleanup
+- ✅ **Dynamic Review Interface:** HTML interface fully config-driven with auto-generated dropdowns
+- ✅ **Clean Review UI:** Export buttons removed, streamlined interface focused on visual review
+
+**Current Status:** Phase 1.7 Complete - Production-ready categorization system with refined accuracy
 
 ## Working CLI Commands (Phase 1.5 Complete)
 
@@ -80,13 +95,19 @@ uv run python -m src.main analyze --range 86-90 --batch-size 3
 - **Smart Categorization** - Includes "Not a Recipe" category with highest precedence
 - **Title Improvements** - Suggests better titles for unclear ones
 
-### Enhanced Reporting System ✅
+### Enhanced Reporting System ✅ + Review System ✅
 ```
 data/processed/
 ├── analysis_report.json           # Standard categorization results
 ├── content_issues_report.json     # Non-recipes flagged for review
 ├── title_improvements.csv         # Only items needing title changes  
 ├── processing_summary.json        # Batch processing metrics and errors
+└── review/                        # ✅ Phase 1.6 Review System Complete
+    ├── review_report.html          # Interactive HTML review interface
+    ├── categorization_review.csv   # Editable CSV for corrections
+    ├── categorization_issues.csv   # CSV focused on problem items only
+    ├── corrections.json            # Tracked corrections to apply
+    └── review_summary.json         # Review session metrics and priorities
 ```
 
 ## Progressive Complexity CLI System (To Implement)
@@ -152,6 +173,34 @@ data/processed/
 
 ## Development Phases (Updated)
 
+### Phase 1.7: Prompt Refinement & Enhanced Categorization ✅ COMPLETE
+**Goal:** Refine categorization logic based on real-world usage and systematic review feedback
+
+**Completed Improvements:**
+- ✅ **Enhanced Recipe Detection:** Ingredient lists without instructions now recognized as recipes
+- ✅ **New "Cooking Reference" Category:** Food-related articles/references separated from "Not a Recipe"
+- ✅ **Improved Content Classification:** Three-tier system for better accuracy
+- ✅ **Refined Conflict Rules:** Updated precedence and edge case handling
+- ✅ **Real-World Validation:** Changes based on actual database cleanup and user feedback
+
+**Enhanced Category System:**
+```yaml
+Precedence Order (Phase 1.7):
+0: Not a Recipe (completely unrelated content only)
+1: Cooking Reference (food articles, tips, equipment reviews)
+2: Breakfast (including smoothie ingredient lists)
+3: Desserts
+4: Baking  
+5: Proteins (Beef, Chicken, Pork, Seafood, Vegetarian)
+6: Sides & Appetizers (including spice mixes, condiments)
+```
+
+**Files Updated for Phase 1.7:**
+- ✅ `config/categories.yaml` - v3 (Added Cooking Reference category)
+- ✅ `config/conflict_rules.yaml` - v3 (Refined logic and precedence)
+- ✅ `config/prompts/base_prompt.txt` - v2 (Enhanced recipe detection)
+- ✅ `src/notion_client/reviewer.py` - v2 (Dynamic interface, clean UI)
+
 ### Phase 1: Data Discovery & Analysis ✅ COMPLETE
 **Goal:** Extract and analyze current database structure without disrupting workflow
 
@@ -188,20 +237,21 @@ data/processed/
 - `database_backup.json` - Complete backup of current database
 
 ### Phase 2: Database Schema Enhancement ⏳ READY TO START
-**Goal:** Add enhanced properties to Notion database using Phase 1.5 analysis results
+**Goal:** Add enhanced properties to Notion database using Phase 1.7 analysis results
 
 **Approach - Non-Disruptive Enhancement:**
-- ✅ **Analysis System Complete:** Content quality and categorization working perfectly
-- ✅ **Enhanced Categories Ready:** Including "Not a Recipe" for content cleanup
+- ✅ **Analysis System Complete:** Content quality and categorization working perfectly with refined accuracy
+- ✅ **Enhanced Categories Ready:** Including "Cooking Reference" for content organization
 - 🎯 **Add new optional properties:** All categories with refined precedence rules
-- 🎯 **Create database views:** Filtered views for each category + content quality
+- 🎯 **Create database views:** Filtered views for each category + content quality + cooking references
 - 🎯 **Database backup:** Complete backup before schema changes
 
-**Final Enhanced Schema (Phase 1.5 Analysis Ready):**
+**Final Enhanced Schema (Phase 1.7 Analysis Ready):**
 ```yaml
 Primary Category (single-select, optional):
-  Not a Recipe (precedence 0), Breakfast (1), Desserts (2), Baking (3), 
-  Beef/Chicken/Pork/Seafood/Vegetarian (4), Sides & Appetizers (5)
+  Not a Recipe (precedence 0), Cooking Reference (1), Breakfast (2), 
+  Desserts (3), Baking (4), Beef/Chicken/Pork/Seafood/Vegetarian (5), 
+  Sides & Appetizers (6)
 
 Cuisine Type (single-select, optional):
   Mexican, Italian, Asian, American, Mediterranean, Indian, French, Other
@@ -214,7 +264,7 @@ Usage Tags (multi-select, optional):
   Favorite, Tried & Tested, Want to Try, Holiday/Special Occasion, 
   Family Recipe, Experimental
 
-Content Quality (optional - from Phase 1.5):
+Content Quality (optional - from Phase 1.7):
   Content Summary (text), Proposed Title (text), Quality Score (1-5)
 ```
 
@@ -272,14 +322,21 @@ Recipes/
 - **Batch processing** with timeout and error handling
 - **Range specification** for targeted analysis
 
-### File Versions & Status (Current):
+### File Versions & Status (Phase 1.7 Complete):
 - ✅ `config.py` - v8 (Azure OpenAI gpt-4.1 configured)
 - ✅ `notion_client/client.py` - v2 (Database operations, ID cleaning) 
-- ✅ `main.py` - v6 (Complete CLI with batch processing, range specification)
-- ✅ `notion_client/analyzer.py` - v1 (Complete analysis engine with YAML integration)
+- ✅ `main.py` - v8 (Complete CLI with review system)
+- ✅ `notion_client/analyzer.py` - v2 (Enhanced analysis engine working)
 - ✅ `notion_client/config_loader.py` - v1 (YAML config and template system)
-- ✅ `config/*.yaml` - v1 (Complete categorization system)
-- ✅ `config/prompts/base_prompt.txt` - v1 (LLM prompt template)
+- ✅ `notion_client/profile_loader.py` - v1 (Profile system working)
+- ✅ `notion_client/reviewer.py` - v1 (Review system complete)
+- ✅ `config/categories.yaml` - v3 (Enhanced with "Cooking Reference" category)
+- ✅ `config/conflict_rules.yaml` - v3 (Refined categorization logic)
+- ✅ `config/cuisines.yaml` - v1 (Complete cuisine system)
+- ✅ `config/dietary_tags.yaml` - v1 (Complete dietary tags)
+- ✅ `config/usage_tags.yaml` - v1 (Complete usage tags)
+- ✅ `config/analysis_profiles.yaml` - v1 (Complete profile system)
+- ✅ `config/prompts/base_prompt.txt` - v2 (Enhanced recipe detection)
 
 ### Error Handling & Safety Features:
 - ✅ ID cleaning for Notion URLs with view parameters  

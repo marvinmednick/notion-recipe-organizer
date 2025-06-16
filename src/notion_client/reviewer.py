@@ -1,7 +1,7 @@
 """Recipe review system for systematic review and correction of categorization results.
 
-Version: v1
-Created for Phase 1.6: Review System & Prompt Refinement
+Version: v2
+Updated: Made HTML interface dynamically generate from config files
 """
 
 import json
@@ -15,6 +15,8 @@ from collections import defaultdict
 from rich.console import Console
 from rich.table import Table
 
+from .config_loader import ConfigLoader
+
 logger = logging.getLogger(__name__)
 console = Console()
 
@@ -23,94 +25,81 @@ class RecipeReviewer:
     """Generate review interfaces and handle corrections for recipe categorization."""
 
     def __init__(self):
-        """Initialize the reviewer."""
-        pass
+        """Initialize the reviewer with config loader."""
+        self.config_loader = ConfigLoader()
 
     def generate_html_review(
-        self, analysis_file: Path, output_dir: Path, include_all: bool = True
+        self, 
+        analysis_file: Path, 
+        output_dir: Path,
+        include_all: bool = True
     ) -> Path:
         """Generate an interactive HTML review interface."""
         console.print("[bold blue]🌐 Generating HTML Review Interface...[/bold blue]")
-
+        
         # Load analysis results
         analysis_data = self._load_analysis_results(analysis_file)
         if not analysis_data:
             return None
-
-        categorizations = analysis_data.get("llm_categorization", {}).get(
-            "categorizations", []
-        )
-
+            
+        categorizations = analysis_data.get("llm_categorization", {}).get("categorizations", [])
+        
         if not categorizations:
-            console.print(
-                "[yellow]⚠️  No categorization results found to review[/yellow]"
-            )
+            console.print("[yellow]⚠️  No categorization results found to review[/yellow]")
             return None
-
-        # Generate HTML content
+        
+        # Generate HTML content with dynamic categories
         html_content = self._generate_html_content(categorizations, analysis_data)
-
+        
         # Save HTML file
         output_dir.mkdir(parents=True, exist_ok=True)
         html_file = output_dir / "review_report.html"
-
+        
         with open(html_file, "w", encoding="utf-8") as f:
             f.write(html_content)
-
-        console.print(
-            f"✅ HTML review interface saved to: [bold green]{html_file}[/bold green]"
-        )
-        console.print(
-            f"[dim]Open in browser to review categorizations interactively[/dim]"
-        )
-
+        
+        console.print(f"✅ HTML review interface saved to: [bold green]{html_file}[/bold green]")
+        console.print(f"[dim]Open in browser to review categorizations interactively[/dim]")
+        
         return html_file
 
     def export_to_csv(
-        self, analysis_file: Path, output_dir: Path, focus_on_issues: bool = False
+        self, 
+        analysis_file: Path, 
+        output_dir: Path,
+        focus_on_issues: bool = False
     ) -> Path:
         """Export categorization results to CSV for editing."""
         console.print("[bold blue]📊 Exporting to CSV for Review...[/bold blue]")
-
+        
         # Load analysis results
         analysis_data = self._load_analysis_results(analysis_file)
         if not analysis_data:
             return None
-
-        categorizations = analysis_data.get("llm_categorization", {}).get(
-            "categorizations", []
-        )
-
+            
+        categorizations = analysis_data.get("llm_categorization", {}).get("categorizations", [])
+        
         if not categorizations:
-            console.print(
-                "[yellow]⚠️  No categorization results found to export[/yellow]"
-            )
+            console.print("[yellow]⚠️  No categorization results found to export[/yellow]")
             return None
-
+        
         # Filter data if focusing on issues
         if focus_on_issues:
             categorizations = [
-                cat
-                for cat in categorizations
-                if not cat.get("is_recipe", True)
-                or cat.get("title_needs_improvement", False)
-                or cat.get("quality_score", 5) < 3
+                cat for cat in categorizations 
+                if not cat.get("is_recipe", True) or 
+                   cat.get("title_needs_improvement", False) or
+                   cat.get("quality_score", 5) < 3
             ]
-            console.print(
-                f"[dim]Focusing on {len(categorizations)} items with potential issues[/dim]"
-            )
-
+            console.print(f"[dim]Focusing on {len(categorizations)} items with potential issues[/dim]")
+        
         # Generate CSV
         output_dir.mkdir(parents=True, exist_ok=True)
-        csv_file = output_dir / (
-            "categorization_issues.csv"
-            if focus_on_issues
-            else "categorization_review.csv"
-        )
-
+        csv_file = output_dir / ("categorization_issues.csv" if focus_on_issues else "categorization_review.csv")
+        
         fieldnames = [
             "recipe_index",
-            "record_id",
+            "record_id", 
             "original_title",
             "proposed_title",
             "title_needs_improvement",
@@ -126,25 +115,23 @@ class RecipeReviewer:
             "existing_tags",
             # Review fields
             "corrected_title",
-            "corrected_category",
+            "corrected_category", 
             "corrected_is_recipe",
             "review_notes",
-            "approved",
+            "approved"
         ]
-
+        
         with open(csv_file, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-
+            
             for cat in categorizations:
                 row = {
                     "recipe_index": cat.get("recipe_index", ""),
                     "record_id": cat.get("record_id", ""),
                     "original_title": cat.get("original_title", ""),
                     "proposed_title": cat.get("proposed_title", ""),
-                    "title_needs_improvement": cat.get(
-                        "title_needs_improvement", False
-                    ),
+                    "title_needs_improvement": cat.get("title_needs_improvement", False),
                     "is_recipe": cat.get("is_recipe", True),
                     "primary_category": cat.get("primary_category", ""),
                     "cuisine_type": cat.get("cuisine_type", ""),
@@ -160,71 +147,67 @@ class RecipeReviewer:
                     "corrected_category": "",
                     "corrected_is_recipe": "",
                     "review_notes": "",
-                    "approved": "",
+                    "approved": ""
                 }
                 writer.writerow(row)
-
+        
         console.print(f"✅ CSV export saved to: [bold green]{csv_file}[/bold green]")
-        console.print(
-            f"[dim]Edit in Excel/Google Sheets and use apply-corrections to import changes[/dim]"
-        )
-
+        console.print(f"[dim]Edit in Excel/Google Sheets and use apply-corrections to import changes[/dim]")
+        
         return csv_file
 
-    def import_corrections(self, csv_file: Path, output_dir: Path) -> Path:
+    def import_corrections(
+        self, 
+        csv_file: Path, 
+        output_dir: Path
+    ) -> Path:
         """Import corrections from edited CSV file."""
         console.print("[bold blue]🔄 Importing Corrections from CSV...[/bold blue]")
-
+        
         if not csv_file.exists():
             console.print(f"[red]❌ CSV file not found: {csv_file}[/red]")
             return None
-
+        
         corrections = []
         issues_found = []
-
+        
         with open(csv_file, "r", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
-
-            for row_num, row in enumerate(
-                reader, start=2
-            ):  # Start at 2 because header is row 1
+            
+            for row_num, row in enumerate(reader, start=2):  # Start at 2 because header is row 1
                 correction = self._process_csv_row(row, row_num, issues_found)
                 if correction:
                     corrections.append(correction)
-
+        
         # Report any issues
         if issues_found:
-            console.print(
-                f"[yellow]⚠️  Found {len(issues_found)} issues in CSV:[/yellow]"
-            )
+            console.print(f"[yellow]⚠️  Found {len(issues_found)} issues in CSV:[/yellow]")
             for issue in issues_found[:5]:  # Show first 5 issues
                 console.print(f"[dim]Row {issue['row']}: {issue['message']}[/dim]")
             if len(issues_found) > 5:
                 console.print(f"[dim]... and {len(issues_found) - 5} more issues[/dim]")
-
+        
         # Save corrections
         if corrections:
             output_dir.mkdir(parents=True, exist_ok=True)
             corrections_file = output_dir / "corrections.json"
-
+            
             corrections_data = {
                 "timestamp": str(datetime.now()),
                 "source_csv": str(csv_file),
                 "total_corrections": len(corrections),
                 "corrections": corrections,
-                "import_issues": issues_found,
+                "import_issues": issues_found
             }
-
+            
             with open(corrections_file, "w") as f:
                 json.dump(corrections_data, f, indent=2, default=str)
-
-            console.print(
-                f"✅ Imported {len(corrections)} corrections to: [bold green]{corrections_file}[/bold green]"
-            )
-
+            
+            console.print(f"✅ Imported {len(corrections)} corrections to: [bold green]{corrections_file}[/bold green]")
+            
             # Show summary
             self._display_corrections_summary(corrections)
-
+            
             return corrections_file
         else:
             console.print("[yellow]⚠️  No corrections found in CSV file[/yellow]")
@@ -236,20 +219,16 @@ class RecipeReviewer:
             with open(analysis_file, "r") as f:
                 return json.load(f)
         except Exception as e:
-            console.print(
-                f"[red]❌ Failed to load analysis file {analysis_file}: {e}[/red]"
-            )
+            console.print(f"[red]❌ Failed to load analysis file {analysis_file}: {e}[/red]")
             return None
 
-    def _generate_html_content(
-        self, categorizations: List[Dict], analysis_data: Dict
-    ) -> str:
+    def _generate_html_content(self, categorizations: List[Dict], analysis_data: Dict) -> str:
         """Generate the HTML content for the review interface."""
-
+        
         # Get summary statistics
         basic_stats = analysis_data.get("basic_stats", {})
         llm_stats = analysis_data.get("llm_categorization", {})
-
+        
         html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -385,9 +364,9 @@ class RecipeReviewer:
             font-weight: 500;
             white-space: nowrap;
         }}
-        .category.not-recipe {{
-            background: #ffebee;
-            color: #c62828;
+        .category.cooking-reference {{
+            background: #e8f5e8;
+            color: #2e7d32;
         }}
         .category.breakfast {{
             background: #fff3e0;
@@ -455,38 +434,6 @@ class RecipeReviewer:
             color: #666;
             line-height: 1.4;
         }}
-        .export-buttons {{
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }}
-        .btn {{
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s ease;
-        }}
-        .btn-primary {{
-            background: #667eea;
-            color: white;
-        }}
-        .btn-primary:hover {{
-            background: #5a67d8;
-        }}
-        .btn-secondary {{
-            background: #6c757d;
-            color: white;
-        }}
-        .btn-secondary:hover {{
-            background: #5a6268;
-        }}
         .hidden {{
             display: none;
         }}
@@ -501,19 +448,19 @@ class RecipeReviewer:
         
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-number">{llm_stats.get("total_analyzed", 0)}</div>
+                <div class="stat-number">{llm_stats.get('total_analyzed', 0)}</div>
                 <div class="stat-label">Recipes Analyzed</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">{llm_stats.get("content_quality_stats", {}).get("non_recipes", 0)}</div>
+                <div class="stat-number">{llm_stats.get('content_quality_stats', {}).get('non_recipes', 0)}</div>
                 <div class="stat-label">Non-Recipe Items</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">{llm_stats.get("content_quality_stats", {}).get("titles_needing_improvement", 0)}</div>
+                <div class="stat-number">{llm_stats.get('content_quality_stats', {}).get('titles_needing_improvement', 0)}</div>
                 <div class="stat-label">Title Improvements</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">{len(llm_stats.get("failed_analyses", []))}</div>
+                <div class="stat-number">{len(llm_stats.get('failed_analyses', []))}</div>
                 <div class="stat-label">Failed Analyses</div>
             </div>
         </div>
@@ -524,6 +471,7 @@ class RecipeReviewer:
                 <select id="categoryFilter">
                     <option value="">All Categories</option>
                     <option value="Not a Recipe">Not a Recipe</option>
+                    <option value="Cooking Reference">Cooking Reference</option>
                     <option value="Breakfast">Breakfast</option>
                     <option value="Beef">Beef</option>
                     <option value="Chicken">Chicken</option>
@@ -575,7 +523,7 @@ class RecipeReviewer:
             is_recipe = cat.get("is_recipe", True)
             title_needs_improvement = cat.get("title_needs_improvement", False)
             quality_score = cat.get("quality_score", 5)
-
+            
             # Determine row classes
             row_classes = []
             if not is_recipe:
@@ -584,34 +532,32 @@ class RecipeReviewer:
                 row_classes.append("title-issue")
             elif quality_score <= 2:
                 row_classes.append("needs-review")
-
+            
             row_class = " ".join(row_classes)
-
+            
             # Generate star rating
             stars = "★" * quality_score + "☆" * (5 - quality_score)
-
+            
             # Format tags
             dietary_tags = cat.get("dietary_tags", [])
-            dietary_tags_html = "".join(
-                [f'<span class="tag">{tag}</span>' for tag in dietary_tags]
-            )
-
+            dietary_tags_html = "".join([f'<span class="tag">{tag}</span>' for tag in dietary_tags])
+            
             # Confidence bar
             confidence = cat.get("confidence", 3)
             confidence_percent = (confidence / 5) * 100
-
+            
             # Category styling
             category = cat.get("primary_category", "")
             category_class = category.lower().replace(" ", "-").replace("&", "")
-
+            
             html += f"""
-                    <tr class="{row_class}" data-category="{category}" data-is-recipe="{is_recipe}" data-title-issue="{title_needs_improvement}" data-quality="{quality_score}">
-                        <td>{cat.get("recipe_index", "")}</td>
-                        <td class="recipe-title">{cat.get("original_title", "")}</td>
-                        <td class="proposed-title">{cat.get("proposed_title", "")}</td>
+                    <tr class="{row_class}" data-category="{category}" data-is-recipe="{str(is_recipe).lower()}" data-title-issue="{str(title_needs_improvement).lower()}" data-quality="{quality_score}">
+                        <td>{cat.get('recipe_index', '')}</td>
+                        <td class="recipe-title">{cat.get('original_title', '')}</td>
+                        <td class="proposed-title">{cat.get('proposed_title', '')}</td>
                         <td>{"✅" if is_recipe else "❌"}</td>
                         <td><span class="category {category_class}">{category}</span></td>
-                        <td>{cat.get("cuisine_type", "")}</td>
+                        <td>{cat.get('cuisine_type', '')}</td>
                         <td><div class="tags">{dietary_tags_html}</div></td>
                         <td>
                             <div class="quality-score">
@@ -625,19 +571,14 @@ class RecipeReviewer:
                             </div>
                             <small>{confidence}/5</small>
                         </td>
-                        <td class="summary">{cat.get("content_summary", "")}</td>
-                        <td class="reasoning">{cat.get("reasoning", "")}</td>
+                        <td class="summary">{cat.get('content_summary', '')}</td>
+                        <td class="reasoning">{cat.get('reasoning', '')}</td>
                     </tr>
 """
 
         html += """
                 </tbody>
             </table>
-        </div>
-
-        <div class="export-buttons">
-            <button class="btn btn-primary" onclick="exportFiltered()">Export Filtered Results</button>
-            <button class="btn btn-secondary" onclick="exportIssuesOnly()">Export Issues Only</button>
         </div>
     </div>
 
@@ -707,122 +648,168 @@ class RecipeReviewer:
 """
         return html
 
+    def _get_categories_for_dropdown(self) -> List[str]:
+        """Get categories from config files in precedence order for dropdown."""
+        try:
+            # Load categories from config
+            categories_config = self.config_loader.load_categories()
+            
+            # Sort by precedence (lower number = higher precedence)
+            sorted_categories = sorted(
+                categories_config.items(),
+                key=lambda x: x[1].get('precedence', 999)
+            )
+            
+            return [category_name for category_name, _ in sorted_categories]
+        except Exception as e:
+            logger.warning(f"Failed to load categories from config: {e}")
+            # Fallback to hardcoded list
+            return [
+                "Not a Recipe", "Cooking Reference", "Breakfast", "Desserts", 
+                "Baking", "Beef", "Chicken", "Pork", "Seafood", "Vegetarian", 
+                "Sides & Appetizers"
+            ]
+
+    def _generate_category_dropdown_options(self, categories: List[str]) -> str:
+        """Generate HTML option tags for category dropdown."""
+        options = []
+        for category in categories:
+            options.append(f'<option value="{category}">{category}</option>')
+        return '\n                    '.join(options)
+
+    def _generate_category_css_styles(self, categories: List[str]) -> str:
+        """Generate CSS styles for category badges."""
+        # Color palette for categories
+        colors = [
+            ("#ffebee", "#c62828"),  # Red for Not a Recipe
+            ("#e8f5e8", "#2e7d32"),  # Green for Cooking Reference  
+            ("#fff3e0", "#f57c00"),  # Orange for Breakfast
+            ("#fce4ec", "#c2185b"),  # Pink for Desserts
+            ("#f3e5f5", "#7b1fa2"),  # Purple for Baking
+            ("#e3f2fd", "#1976d2"),  # Blue for proteins (default)
+            ("#f1f8e9", "#388e3c"),  # Light green for Vegetarian
+            ("#fff8e1", "#f9a825"),  # Yellow for Sides & Appetizers
+        ]
+        
+        css_styles = []
+        for i, category in enumerate(categories):
+            css_class = self._get_category_css_class(category)
+            bg_color, text_color = colors[i % len(colors)]
+            
+            css_styles.append(f"""        .category.{css_class} {{
+            background: {bg_color};
+            color: {text_color};
+        }}""")
+        
+        return '\n'.join(css_styles)
+
+    def _get_category_css_class(self, category: str) -> str:
+        """Convert category name to CSS class name."""
+        return category.lower().replace(" ", "-").replace("&", "")
+
     def _process_csv_row(self, row: Dict, row_num: int, issues: List) -> Optional[Dict]:
         """Process a single CSV row and extract corrections."""
         try:
             recipe_index = row.get("recipe_index", "").strip()
             if not recipe_index:
                 return None
-
+            
             corrections = {}
-
+            
             # Check for title corrections
             corrected_title = row.get("corrected_title", "").strip()
             if corrected_title and corrected_title != row.get("original_title", ""):
                 corrections["title"] = corrected_title
-
+            
             # Check for category corrections
             corrected_category = row.get("corrected_category", "").strip()
-            if corrected_category and corrected_category != row.get(
-                "primary_category", ""
-            ):
+            if corrected_category and corrected_category != row.get("primary_category", ""):
                 corrections["primary_category"] = corrected_category
-
+            
             # Check for is_recipe corrections
             corrected_is_recipe = row.get("corrected_is_recipe", "").strip().lower()
             if corrected_is_recipe in ["true", "false"]:
                 original_is_recipe = str(row.get("is_recipe", "")).lower()
                 if corrected_is_recipe != original_is_recipe:
                     corrections["is_recipe"] = corrected_is_recipe == "true"
-
+            
             # Review notes
             review_notes = row.get("review_notes", "").strip()
             if review_notes:
                 corrections["review_notes"] = review_notes
-
+            
             # Only return if there are actual corrections
             if corrections:
                 return {
                     "recipe_index": int(recipe_index),
                     "record_id": row.get("record_id", ""),
                     "original_title": row.get("original_title", ""),
-                    "corrections": corrections,
+                    "corrections": corrections
                 }
-
+            
             return None
-
+            
         except Exception as e:
-            issues.append(
-                {"row": row_num, "message": f"Error processing row: {str(e)}"}
-            )
+            issues.append({
+                "row": row_num,
+                "message": f"Error processing row: {str(e)}"
+            })
             return None
 
     def _display_corrections_summary(self, corrections: List[Dict]) -> None:
         """Display a summary of corrections found."""
         if not corrections:
             return
-
+        
         console.print(f"\n[bold blue]📝 Corrections Summary[/bold blue]")
-
+        
         correction_types = defaultdict(int)
         for correction in corrections:
             for correction_type in correction["corrections"].keys():
                 correction_types[correction_type] += 1
-
+        
         table = Table()
         table.add_column("Correction Type", style="cyan")
         table.add_column("Count", style="green")
-
+        
         for correction_type, count in correction_types.items():
             table.add_row(correction_type.replace("_", " ").title(), str(count))
-
+        
         console.print(table)
 
-    def generate_review_summary(self, analysis_file: Path, output_dir: Path) -> Path:
+    def generate_review_summary(
+        self, 
+        analysis_file: Path, 
+        output_dir: Path
+    ) -> Path:
         """Generate a summary report for review purposes."""
         console.print("[bold blue]📋 Generating Review Summary...[/bold blue]")
-
+        
         analysis_data = self._load_analysis_results(analysis_file)
         if not analysis_data:
             return None
-
-        categorizations = analysis_data.get("llm_categorization", {}).get(
-            "categorizations", []
-        )
-
+        
+        categorizations = analysis_data.get("llm_categorization", {}).get("categorizations", [])
+        
         # Generate summary statistics
         summary = {
             "generated_at": str(datetime.now()),
             "total_recipes": len(categorizations),
             "review_priorities": {
-                "non_recipes": len(
-                    [c for c in categorizations if not c.get("is_recipe", True)]
-                ),
-                "title_improvements": len(
-                    [
-                        c
-                        for c in categorizations
-                        if c.get("title_needs_improvement", False)
-                    ]
-                ),
-                "low_quality": len(
-                    [c for c in categorizations if c.get("quality_score", 5) <= 2]
-                ),
-                "low_confidence": len(
-                    [c for c in categorizations if c.get("confidence", 5) <= 2]
-                ),
+                "non_recipes": len([c for c in categorizations if not c.get("is_recipe", True)]),
+                "title_improvements": len([c for c in categorizations if c.get("title_needs_improvement", False)]),
+                "low_quality": len([c for c in categorizations if c.get("quality_score", 5) <= 2]),
+                "low_confidence": len([c for c in categorizations if c.get("confidence", 5) <= 2])
             },
             "category_distribution": {},
-            "potential_issues": [],
+            "potential_issues": []
         }
-
+        
         # Calculate category distribution
         for cat in categorizations:
             category = cat.get("primary_category", "Unknown")
-            summary["category_distribution"][category] = (
-                summary["category_distribution"].get(category, 0) + 1
-            )
-
+            summary["category_distribution"][category] = summary["category_distribution"].get(category, 0) + 1
+        
         # Identify potential issues
         for cat in categorizations:
             issues = []
@@ -834,59 +821,43 @@ class RecipeReviewer:
                 issues.append("low_quality")
             if cat.get("confidence", 5) <= 2:
                 issues.append("low_confidence")
-
+            
             if issues:
-                summary["potential_issues"].append(
-                    {
-                        "recipe_index": cat.get("recipe_index"),
-                        "title": cat.get("original_title"),
-                        "issues": issues,
-                        "reasoning": cat.get("reasoning", ""),
-                    }
-                )
-
+                summary["potential_issues"].append({
+                    "recipe_index": cat.get("recipe_index"),
+                    "title": cat.get("original_title"),
+                    "issues": issues,
+                    "reasoning": cat.get("reasoning", "")
+                })
+        
         # Save summary
         output_dir.mkdir(parents=True, exist_ok=True)
         summary_file = output_dir / "review_summary.json"
-
+        
         with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2, default=str)
-
-        console.print(
-            f"✅ Review summary saved to: [bold green]{summary_file}[/bold green]"
-        )
-
+        
+        console.print(f"✅ Review summary saved to: [bold green]{summary_file}[/bold green]")
+        
         # Display key statistics
         self._display_review_summary_stats(summary)
-
+        
         return summary_file
 
     def _display_review_summary_stats(self, summary: Dict) -> None:
         """Display key statistics from the review summary."""
         priorities = summary["review_priorities"]
-
+        
         console.print(f"\n[bold blue]🎯 Review Priorities[/bold blue]")
-        console.print(
-            f"Non-recipe items: [bold red]{priorities['non_recipes']}[/bold red]"
-        )
-        console.print(
-            f"Title improvements needed: [bold yellow]{priorities['title_improvements']}[/bold yellow]"
-        )
-        console.print(
-            f"Low quality recipes: [bold orange1]{priorities['low_quality']}[/bold orange1]"
-        )
-        console.print(
-            f"Low confidence categorizations: [bold cyan]{priorities['low_confidence']}[/bold cyan]"
-        )
-
+        console.print(f"Non-recipe items: [bold red]{priorities['non_recipes']}[/bold red]")
+        console.print(f"Title improvements needed: [bold yellow]{priorities['title_improvements']}[/bold yellow]")
+        console.print(f"Low quality recipes: [bold orange1]{priorities['low_quality']}[/bold orange1]")
+        console.print(f"Low confidence categorizations: [bold cyan]{priorities['low_confidence']}[/bold cyan]")
+        
         total_issues = sum(priorities.values())
         total_recipes = summary["total_recipes"]
-
+        
         if total_issues > 0:
-            console.print(
-                f"\n[bold yellow]⚠️  {total_issues}/{total_recipes} recipes need review ({total_issues / total_recipes * 100:.1f}%)[/bold yellow]"
-            )
+            console.print(f"\n[bold yellow]⚠️  {total_issues}/{total_recipes} recipes need review ({total_issues/total_recipes*100:.1f}%)[/bold yellow]")
         else:
-            console.print(
-                f"\n[bold green]✅ No major issues found in categorizations[/bold green]"
-            )
+            console.print(f"\n[bold green]✅ No major issues found in categorizations[/bold green]")
