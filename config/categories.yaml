@@ -1,17 +1,28 @@
 # Primary Categories Configuration
-# Version: v2
+# Version: v3
 # These are mutually exclusive - each recipe gets exactly one primary category
 
 categories:
   Not a Recipe:
-    description: "Items that were saved by mistake and are not actually recipes"
+    description: "Items that were saved by mistake and are completely unrelated to food/cooking"
     criteria:
-      - "Books, articles, or other non-food content"
-      - "Website URLs that don't contain recipe information"
-      - "Non-cooking related content accidentally saved"
-      - "Equipment reviews, cooking tips, or general food articles"
-    examples: ["Cookbook Reviews", "Kitchen Equipment Articles", "Food History Articles", "Random Bookmarks"]
-    precedence: 0  # Highest precedence - if it's not a recipe, categorize it as such
+      - "Content completely unrelated to food, cooking, or kitchen"
+      - "Random bookmarks or mistakenly saved non-culinary content"
+      - "Books, articles, or websites about non-food topics"
+    examples: ["Random Wikipedia Articles", "Non-Food Books", "Unrelated Links"]
+    precedence: 0  # Highest precedence - if it's completely unrelated, categorize as such
+    
+  Cooking Reference:
+    description: "Cooking-related articles, tips, techniques, and reference materials"
+    criteria:
+      - "Cooking articles, tips, and technique explanations"
+      - "Equipment reviews and kitchen tool recommendations"
+      - "Food history, culture, or educational content about cooking"
+      - "Cooking method explanations and tutorials"
+      - "Kitchen reference materials and guides"
+      - "Food science and culinary education content"
+    examples: ["How to Sharpen Knives", "Guide to Cooking Methods", "Equipment Reviews", "Food History Articles"]
+    precedence: 1  # Second highest precedence - cooking content that's not recipes
     
   Breakfast:
     description: "Foods primarily intended for breakfast consumption"
@@ -20,8 +31,9 @@ categories:
       - "Breakfast pastries (muffins, scones, coffee cake)"
       - "Egg dishes for breakfast (scrambled, omelets, frittatas)"
       - "Breakfast meats and sides"
-    examples: ["Pancakes", "Overnight Oats", "Breakfast Burrito", "Coffee Cake"]
-    precedence: 1  # Second highest precedence - breakfast items stay in breakfast
+      - "Smoothie ingredient lists and breakfast drink recipes"
+    examples: ["Pancakes", "Overnight Oats", "Breakfast Burrito", "Coffee Cake", "Green Smoothie Ingredients"]
+    precedence: 2  # Third highest precedence - breakfast items stay in breakfast
     
   Desserts:
     description: "Sweet dishes intended for dessert"
@@ -31,7 +43,7 @@ categories:
       - "Ice cream and frozen desserts"
       - "Puddings and sweet treats"
     examples: ["Chocolate Cake", "Apple Pie", "Chocolate Chip Cookies", "Ice Cream"]
-    precedence: 2  # Third highest precedence
+    precedence: 3  # Fourth highest precedence
     
   Baking:
     description: "Bread, rolls, and yeasted/quick bread items (not desserts)"
@@ -41,7 +53,7 @@ categories:
       - "Biscuits and savory quick breads"
       - "Pizza dough and flatbreads"
     examples: ["Sourdough Bread", "Dinner Rolls", "Focaccia", "Biscuits"]
-    precedence: 3
+    precedence: 4
     
   Beef:
     description: "Dishes where beef is the primary protein"
@@ -50,7 +62,7 @@ categories:
       - "Ground beef dishes (burgers, meatballs, casseroles)"
       - "Beef stews and braises"
     examples: ["Beef Stew", "Hamburgers", "Pot Roast", "Beef Tacos"]
-    precedence: 4
+    precedence: 5
     
   Chicken:
     description: "Dishes where chicken is the primary protein"
@@ -59,7 +71,7 @@ categories:
       - "Chicken breasts, thighs, wings as focus"
       - "Ground chicken dishes"
     examples: ["Roast Chicken", "Chicken Curry", "Buffalo Wings", "Chicken Salad"]
-    precedence: 4
+    precedence: 5
     
   Pork:
     description: "Dishes where pork is the primary protein"
@@ -69,7 +81,7 @@ categories:
       - "Ground pork dishes"
       - "Sausage-based dishes where sausage is the main component"
     examples: ["Pork Chops", "Ham Dinner", "Pulled Pork", "Sausage Pasta"]
-    precedence: 4
+    precedence: 5
     
   Seafood:
     description: "Dishes where fish or shellfish is the primary protein"
@@ -78,7 +90,7 @@ categories:
       - "Shellfish (shrimp, crab, lobster, mussels, etc.)"
       - "Mixed seafood dishes"
     examples: ["Salmon Fillet", "Shrimp Scampi", "Fish Tacos", "Crab Cakes"]
-    precedence: 4
+    precedence: 5
     
   Vegetarian:
     description: "Plant-based dishes or dishes where vegetables/grains are the main component"
@@ -87,8 +99,9 @@ categories:
       - "Vegetable-based main dishes"
       - "Grain and legume-based meals"
       - "Pasta dishes without meat"
-    examples: ["Vegetable Stir Fry", "Caprese Salad", "Lentil Curry", "Margherita Pizza"]
-    precedence: 4
+      - "Ingredient lists for vegetarian dishes (like smoothies, salads)"
+    examples: ["Vegetable Stir Fry", "Caprese Salad", "Lentil Curry", "Margherita Pizza", "Smoothie Ingredient Mix"]
+    precedence: 5
     
   Sides & Appetizers:
     description: "Dishes intended to accompany main courses or serve as starters"
@@ -97,12 +110,13 @@ categories:
       - "Appetizers and hors d'oeuvres"
       - "Dips and spreads"
       - "Small plates and finger foods"
-    examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs"]
-    precedence: 5
+      - "Condiment and seasoning mix recipes"
+    examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs", "Spice Mix Recipe"]
+    precedence: 6
 
 # Special Notes:
 # - Precedence determines conflict resolution (lower number = higher precedence)
-# - "Not a Recipe" has highest precedence - always wins if content is not food-related
-# - Breakfast items always stay in Breakfast regardless of other characteristics
-# - Sweet breakfast items (coffee cake, muffins) go in Breakfast, not Desserts
-# - Savory baking (bread, rolls) goes in Baking, not based on when consumed
+# - "Not a Recipe" has highest precedence for completely unrelated content
+# - "Cooking Reference" for food-related articles, tips, and reference materials - Ingredient lists (even without instructions) are treated as recipes if for specific dishes
+# - Smoothie ingredients go in Breakfast if breakfast-focused, Vegetarian if general
+# - Spice mixes and condiment recipes typically go in Sides & Appetizers
