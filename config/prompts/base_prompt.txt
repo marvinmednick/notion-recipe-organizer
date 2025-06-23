@@ -12,21 +12,23 @@ Before categorizing, determine if this item is actually a recipe or cooking-rela
 - Focus on preparing a specific food item
 - Actionable cooking steps
 - **Ingredient lists for specific dishes** (even without detailed instructions - like smoothie ingredients, spice mixes, etc.)
-- Recipe components or building blocks
+- **Recipe components and building blocks** (spice blends, sauces, doughs, marinades)
+- **Substitutions and alternatives** (dairy-free buttermilk, egg substitutes, flour blends)
 
 **COOKING REFERENCES include:**
-- Cooking articles, tips, and techniques
+- Cooking articles, tips, and techniques (WITHOUT specific recipes)
 - Equipment reviews and recommendations
 - Food history, culture, or educational content
-- Cooking method explanations
-- Kitchen reference materials
+- Cooking method explanations and tutorials
+- Kitchen reference materials and guides
 
 **NOT RECIPES OR COOKING CONTENT:**
 - Completely unrelated content (books about non-food topics, random links)
 - General lifestyle or non-culinary articles
 
 If this appears to be completely unrelated to food/cooking, categorize it as "Not a Recipe". 
-If it's cooking-related but not a recipe, categorize it as "Cooking Reference".
+If it's cooking-related but educational (not making a specific item), categorize it as "Cooking Reference".
+If it makes any specific food item, component, or substitute, treat it as a recipe.
 
 ## SECOND: Evaluate content quality
 - Generate a brief 1-2 sentence summary of what this item actually contains
@@ -55,20 +57,25 @@ If it's cooking-related but not a recipe, categorize it as "Cooking Reference".
 
 1. **Content Type Assessment**: 
    - If it's completely unrelated to food/cooking, use "Not a Recipe"
-   - If it's cooking-related but not a recipe (articles, tips, reviews), use "Cooking Reference"
-   - If it's an ingredient list for a specific dish (even without instructions), treat as a recipe
+   - If it's cooking education without making specific items, use "Cooking Reference"  
+   - If it makes any specific food item, component, or substitute, treat as a recipe
 
-2. **Primary Category**: Every item must have exactly one primary category. Use the precedence rules to resolve conflicts.
+2. **Recipe Components and Substitutions**: 
+   - Spice mixes, sauces, doughs → "Recipe Components"
+   - Ingredient replacements, substitutes → "Substitutions"
+   - These are recipes, NOT cooking references
 
-3. **Cuisine Assignment**: Only assign a cuisine if it clearly fits. Use "Other" for fusion dishes, simple preparations, or unclear cases.
+3. **Primary Category**: Every item must have exactly one primary category. Recipe categories have higher precedence than "Cooking Reference".
 
-4. **Dietary Tags**: Be conservative - only assign tags you're confident about. Missing a tag is better than incorrectly assigning one.
+4. **Cuisine Assignment**: Only assign a cuisine if it clearly fits. Use "Other" for fusion dishes, simple preparations, or unclear cases.
 
-5. **Usage Tags**: Only assign auto-assignable usage tags. Manual tags (Favorite, Tried & Tested, Family Recipe, Experimental) should not be assigned.
+5. **Dietary Tags**: Be conservative - only assign tags you're confident about. Missing a tag is better than incorrectly assigning one.
 
-6. **Title Evaluation**: Only suggest title changes if the current title is genuinely unclear, too long, or unhelpful.
+6. **Usage Tags**: Only assign auto-assignable usage tags. Manual tags (Favorite, Tried & Tested, Family Recipe, Experimental) should not be assigned.
 
-7. **Quality Assessment**: Rate overall usefulness (1=poor/not useful, 5=excellent/very useful).
+7. **Title Evaluation**: Only suggest title changes if the current title is genuinely unclear, too long, or unhelpful.
+
+8. **Quality Assessment**: Rate overall usefulness (1=poor/not useful, 5=excellent/very useful).
 
 ## Response Format:
 Respond with valid JSON in this exact format:

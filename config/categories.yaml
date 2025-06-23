@@ -1,5 +1,5 @@
 # Primary Categories Configuration
-# Version: v3
+# Version: v4
 # These are mutually exclusive - each recipe gets exactly one primary category
 
 categories:
@@ -12,18 +12,6 @@ categories:
     examples: ["Random Wikipedia Articles", "Non-Food Books", "Unrelated Links"]
     precedence: 0  # Highest precedence - if it's completely unrelated, categorize as such
     
-  Cooking Reference:
-    description: "Cooking-related articles, tips, techniques, and reference materials"
-    criteria:
-      - "Cooking articles, tips, and technique explanations"
-      - "Equipment reviews and kitchen tool recommendations"
-      - "Food history, culture, or educational content about cooking"
-      - "Cooking method explanations and tutorials"
-      - "Kitchen reference materials and guides"
-      - "Food science and culinary education content"
-    examples: ["How to Sharpen Knives", "Guide to Cooking Methods", "Equipment Reviews", "Food History Articles"]
-    precedence: 1  # Second highest precedence - cooking content that's not recipes
-    
   Breakfast:
     description: "Foods primarily intended for breakfast consumption"
     criteria:
@@ -33,7 +21,7 @@ categories:
       - "Breakfast meats and sides"
       - "Smoothie ingredient lists and breakfast drink recipes"
     examples: ["Pancakes", "Overnight Oats", "Breakfast Burrito", "Coffee Cake", "Green Smoothie Ingredients"]
-    precedence: 2  # Third highest precedence - breakfast items stay in breakfast
+    precedence: 1  # High precedence - breakfast items stay in breakfast
     
   Desserts:
     description: "Sweet dishes intended for dessert"
@@ -43,7 +31,7 @@ categories:
       - "Ice cream and frozen desserts"
       - "Puddings and sweet treats"
     examples: ["Chocolate Cake", "Apple Pie", "Chocolate Chip Cookies", "Ice Cream"]
-    precedence: 3  # Fourth highest precedence
+    precedence: 2
     
   Baking:
     description: "Bread, rolls, and yeasted/quick bread items (not desserts)"
@@ -53,7 +41,29 @@ categories:
       - "Biscuits and savory quick breads"
       - "Pizza dough and flatbreads"
     examples: ["Sourdough Bread", "Dinner Rolls", "Focaccia", "Biscuits"]
+    precedence: 3
+    
+  Recipe Components:
+    description: "Recipe building blocks and components used in other dishes"
+    criteria:
+      - "Spice mixes and seasoning blends"
+      - "Base sauces and stocks"
+      - "Doughs and batters meant for further use"
+      - "Marinades and dressings"
+      - "Condiments and flavoring agents"
+    examples: ["Taco Seasoning Mix", "Basic Tomato Sauce", "Pizza Dough", "Ranch Dressing", "Spice Blend"]
     precedence: 4
+    
+  Substitutions:
+    description: "Ingredient replacements and alternatives for dietary needs or availability"
+    criteria:
+      - "Dairy-free substitutes (milk, buttermilk, cheese alternatives)"
+      - "Egg substitutes and replacements"
+      - "Gluten-free flour blends and alternatives"
+      - "Sugar substitutes and sweetener alternatives"
+      - "Ingredient swaps for allergies or preferences"
+    examples: ["Dairy-Free Buttermilk", "Egg Substitute", "Gluten-Free Flour Blend", "Cashew Cream"]
+    precedence: 5
     
   Beef:
     description: "Dishes where beef is the primary protein"
@@ -62,7 +72,7 @@ categories:
       - "Ground beef dishes (burgers, meatballs, casseroles)"
       - "Beef stews and braises"
     examples: ["Beef Stew", "Hamburgers", "Pot Roast", "Beef Tacos"]
-    precedence: 5
+    precedence: 6
     
   Chicken:
     description: "Dishes where chicken is the primary protein"
@@ -71,7 +81,7 @@ categories:
       - "Chicken breasts, thighs, wings as focus"
       - "Ground chicken dishes"
     examples: ["Roast Chicken", "Chicken Curry", "Buffalo Wings", "Chicken Salad"]
-    precedence: 5
+    precedence: 6
     
   Pork:
     description: "Dishes where pork is the primary protein"
@@ -81,7 +91,7 @@ categories:
       - "Ground pork dishes"
       - "Sausage-based dishes where sausage is the main component"
     examples: ["Pork Chops", "Ham Dinner", "Pulled Pork", "Sausage Pasta"]
-    precedence: 5
+    precedence: 6
     
   Seafood:
     description: "Dishes where fish or shellfish is the primary protein"
@@ -90,7 +100,7 @@ categories:
       - "Shellfish (shrimp, crab, lobster, mussels, etc.)"
       - "Mixed seafood dishes"
     examples: ["Salmon Fillet", "Shrimp Scampi", "Fish Tacos", "Crab Cakes"]
-    precedence: 5
+    precedence: 6
     
   Vegetarian:
     description: "Plant-based dishes or dishes where vegetables/grains are the main component"
@@ -101,7 +111,7 @@ categories:
       - "Pasta dishes without meat"
       - "Ingredient lists for vegetarian dishes (like smoothies, salads)"
     examples: ["Vegetable Stir Fry", "Caprese Salad", "Lentil Curry", "Margherita Pizza", "Smoothie Ingredient Mix"]
-    precedence: 5
+    precedence: 6
     
   Sides & Appetizers:
     description: "Dishes intended to accompany main courses or serve as starters"
@@ -110,13 +120,25 @@ categories:
       - "Appetizers and hors d'oeuvres"
       - "Dips and spreads"
       - "Small plates and finger foods"
-      - "Condiment and seasoning mix recipes"
-    examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs", "Spice Mix Recipe"]
-    precedence: 6
+    examples: ["Garlic Bread", "Caesar Salad", "Hummus", "Deviled Eggs"]
+    precedence: 7
+    
+  Cooking Reference:
+    description: "Cooking-related articles, tips, techniques, and reference materials"
+    criteria:
+      - "Cooking articles, tips, and technique explanations"
+      - "Equipment reviews and kitchen tool recommendations"
+      - "Food history, culture, or educational content about cooking"
+      - "Cooking method explanations and tutorials"
+      - "Kitchen reference materials and guides"
+      - "Food science and culinary education content"
+    examples: ["How to Sharpen Knives", "Guide to Cooking Methods", "Equipment Reviews", "Food History Articles"]
+    precedence: 8  # Lowest precedence - only wins when clearly not a recipe
 
 # Special Notes:
 # - Precedence determines conflict resolution (lower number = higher precedence)
 # - "Not a Recipe" has highest precedence for completely unrelated content
-# - "Cooking Reference" for food-related articles, tips, and reference materials - Ingredient lists (even without instructions) are treated as recipes if for specific dishes
-# - Smoothie ingredients go in Breakfast if breakfast-focused, Vegetarian if general
-# - Spice mixes and condiment recipes typically go in Sides & Appetizers
+# - Recipe categories (1-7) have higher precedence than "Cooking Reference" (8)
+# - "Recipe Components" and "Substitutions" are NEW categories for recipe building blocks
+# - Ingredient lists and recipe components are treated as recipes, not references
+# - "Cooking Reference" only for articles, tips, and educational content (not actual recipes)

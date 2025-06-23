@@ -1,17 +1,19 @@
-  # Conflict Resolution Rules
-# Version: v3
+# Conflict Resolution Rules
+# Version: v4
 # Rules for handling edge cases and conflicts in categorization
 
 primary_category_rules:
   precedence_order:
     # Lower number = higher precedence (wins conflicts)
-    0: "Not a Recipe"        # Highest precedence - completely unrelated content
-    1: "Cooking Reference"   # Second highest - cooking articles/references
-    2: Breakfast            # Third highest
-    3: Desserts            # Fourth highest
-    4: Baking              # Fifth highest  
-    5: [Beef, Chicken, Pork, Seafood, Vegetarian]  # Protein-based (equal precedence)
-    6: "Sides & Appetizers"  # Lowest precedence
+    0: "Not a Recipe"                    # Highest precedence - completely unrelated content
+    1: Breakfast                        # Recipe categories have high precedence
+    2: Desserts                         
+    3: Baking                           
+    4: "Recipe Components"              # NEW - recipe building blocks
+    5: Substitutions                    # NEW - ingredient replacements
+    6: [Beef, Chicken, Pork, Seafood, Vegetarian]  # Protein-based (equal precedence)
+    7: "Sides & Appetizers"             
+    8: "Cooking Reference"              # Lowest precedence - only for articles/tips
 
   specific_rules:
     not_recipe_precedence:
@@ -22,22 +24,40 @@ primary_category_rules:
         - "General lifestyle articles without cooking focus go to Not a Recipe"
       reasoning: "Only use for content completely unrelated to food/cooking"
       
-    cooking_reference_precedence:
-      description: "Food-related content that isn't recipes gets 'Cooking Reference'"
+    recipe_vs_reference_precedence:
+      description: "Recipe categories beat Cooking Reference in conflicts"
       examples:
-        - "Equipment reviews go to Cooking Reference"
-        - "Cooking technique articles go to Cooking Reference"
-        - "Food history articles go to Cooking Reference"
-        - "Kitchen tips and guides go to Cooking Reference"
-      reasoning: "Keeps cooking-related content in database but separate from recipes"
+        - "Buttermilk substitute recipe -> Substitutions (not Cooking Reference)"
+        - "Spice mix recipe -> Recipe Components (not Cooking Reference)"
+        - "Cooking technique article -> Cooking Reference"
+      reasoning: "If something could be a recipe OR reference, default to recipe category"
       
-    ingredient_list_handling:
-      description: "Ingredient lists for specific dishes are treated as recipes"
+    recipe_components_handling:
+      description: "Recipe building blocks are recipes, categorized by function"
       examples:
-        - "Smoothie ingredient list -> treat as recipe (probably Breakfast or Vegetarian)"
-        - "Spice mix ingredients -> treat as recipe (probably Sides & Appetizers)"
-        - "Salad ingredient list -> treat as recipe (probably Vegetarian)"
-      reasoning: "Ingredient lists are recipe components even without detailed instructions"
+        - "Spice mixes -> Recipe Components"
+        - "Base sauces and stocks -> Recipe Components"
+        - "Marinades and dressings -> Recipe Components"
+        - "Pizza dough for later use -> Recipe Components"
+      reasoning: "Components used to build other dishes are still recipes"
+      
+    substitutions_handling:
+      description: "Ingredient replacements are recipes, not references"
+      examples:
+        - "Dairy-free buttermilk -> Substitutions"
+        - "Egg substitute -> Substitutions"
+        - "Gluten-free flour blend -> Substitutions"
+        - "Cashew cream cheese -> Substitutions"
+      reasoning: "Substitutes are recipes for specific food items, even if used in other recipes"
+      
+    cooking_reference_scope:
+      description: "Cooking Reference only for educational content, not actual recipes"
+      examples:
+        - "How to make buttermilk substitute -> Substitutions (it's a recipe)"
+        - "Article about different types of flour -> Cooking Reference"
+        - "Equipment review -> Cooking Reference"
+        - "Cooking technique explanation -> Cooking Reference"
+      reasoning: "If it makes a specific food item, it's a recipe; if it teaches concepts, it's reference"
       
     breakfast_precedence:
       description: "Breakfast items always stay in Breakfast category"
@@ -78,19 +98,33 @@ content_quality_rules:
     description: "How to determine if content is actually a recipe"
     criteria:
       - "Contains ingredient list (with or without detailed cooking instructions)"
-      - "Focused on preparing a specific food item or dish"
+      - "Focused on preparing a specific food item or component"
       - "Has actionable components for making food"
-      - "Ingredient lists for specific preparations (smoothies, spice mixes, etc.)"
+      - "Ingredient lists for specific preparations (smoothies, spice mixes, substitutes)"
+      - "Recipe building blocks and components"
     cooking_reference_indicators:
-      - "Articles about cooking techniques or methods"
+      - "Articles about cooking techniques or methods (without specific recipes)"
       - "Equipment recommendations and reviews"
       - "Food history, culture, or educational content"
       - "Kitchen tips and reference guides"
-      - "Cooking tutorials without specific recipes"
+      - "Cooking tutorials explaining concepts (not making specific items)"
     non_recipe_indicators:
       - "Content completely unrelated to food or cooking"
       - "General lifestyle articles without cooking focus"
       - "Books or articles about non-culinary topics"
+      
+  component_vs_reference_distinction:
+    description: "How to distinguish recipe components from cooking references"
+    recipe_component_signs:
+      - "Makes a specific ingredient or component"
+      - "Has measurable ingredients or proportions"
+      - "Results in a usable food item or mixture"
+      - "Can be made and stored for later use"
+    cooking_reference_signs:
+      - "Explains concepts or techniques"
+      - "Discusses theory or background"
+      - "Reviews or compares options"
+      - "Provides general guidance without specific recipes"
       
   title_evaluation:
     description: "When to suggest title improvements"
@@ -101,7 +135,7 @@ content_quality_rules:
       - "Titles with excessive punctuation or formatting"
     good_titles:
       - "Clear, descriptive, and concise"
-      - "Identifies the main dish, technique, or content type"
+      - "Identifies the main dish, component, or content type"
       - "Easy to understand and remember"
       - "Appropriate length (under 80 characters preferred)"
 
@@ -121,7 +155,8 @@ cuisine_assignment_rules:
       - "Grilled chicken with salt and pepper -> Other"
       - "Basic roasted vegetables -> Other"
       - "Simple pasta with olive oil -> Other (unless clearly Italian preparation)"
-      - "Basic smoothie ingredients -> Other (unless cuisine-specific ingredients)"
+      - "Basic spice mix -> Other (unless cuisine-specific ingredients)"
+      - "Generic substitutions -> Other (unless cuisine-specific)"
 
 dietary_tag_conflicts:
   conservative_assignment:
@@ -152,6 +187,7 @@ usage_tag_guidelines:
 # - When in doubt, choose the more general category
 # - Precedence rules are strict - higher precedence always wins
 # - "Not a Recipe" only for completely unrelated content
-# - "Cooking Reference" for food-related articles and reference materials
-# - Ingredient lists (even without instructions) are recipes if for specific dishes
+# - Recipe categories (1-7) beat "Cooking Reference" (8) in conflicts
+# - Recipe components and substitutions are recipes, not references
+# - "Cooking Reference" only for educational content without specific recipes
 # - Document any exceptions or edge cases for future reference

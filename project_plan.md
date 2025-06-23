@@ -113,7 +113,7 @@ uv run python -m src.main analyze --profile testing  # Config-driven
 **Decision:** Build incrementally with non-disruptive phases
 **Reasoning:** Allows testing, validation, and maintains current workflow throughout development
 
-## Current Technical Status (Phase 1.7 Complete!)
+## Current Technical Status (Phase 1.8 Complete!)
 
 ### ✅ Phase 1.5 Complete - Fully Production Ready:
 - **Project Setup:** UV environment, PyYAML dependency, all dependencies working
@@ -143,9 +143,17 @@ uv run python -m src.main analyze --profile testing  # Config-driven
 - **Dynamic Review Interface:** HTML interface now fully config-driven with auto-generated category dropdowns
 - **Clean Review UI:** Export buttons removed, focus on visual review with CLI for data export
 
-### 🎯 Current Status: Production-Ready with Refined Accuracy
-- **Issue Resolved:** False positives for ingredient lists and cooking references
-- **Categorization Improved:** More nuanced understanding of cooking content vs. non-recipes
+### ✅ Phase 1.8 Complete - Enhanced Recipe Categories & Fixed Precedence:
+- **New "Recipe Components" Category:** Spice mixes, sauces, doughs, marinades properly categorized
+- **New "Substitutions" Category:** Ingredient replacements (dairy-free buttermilk, egg substitutes) recognized
+- **Fixed Precedence Logic:** Recipe categories now have higher precedence than "Cooking Reference"
+- **Enhanced Recipe Detection:** Components and substitutions treated as recipes, not references
+- **Comprehensive Category System:** 10 distinct categories covering all recipe and content types
+
+### 🎯 Current Status: Production-Ready with Comprehensive Categorization
+- **Issue Resolved:** Recipe components and substitutions properly recognized as recipes
+- **Precedence Fixed:** "Cooking Reference" only wins for educational content, not actual recipes
+- **Complete Coverage:** All types of cooking content properly categorized
 - **Ready for Production:** Categorization system ready for Phase 2 (Database Enhancement)
 
 ### Production-Ready Commands (All Working + Review System):
@@ -183,7 +191,7 @@ uv run python -m src.main apply-corrections --input corrections.csv  # Apply fix
 - **Comprehensive Categorization:** All categories refined based on real-world usage
 - **Specialized Reports:** Separate outputs for different review purposes
 
-### File Status & Versions (Phase 1.7 Complete & Tested):
+### File Status & Versions (Phase 1.8 Complete & Tested):
 ```
 ✅ config.py (v8) - Azure OpenAI configured  
 ✅ notion_client/client.py (v2) - Database ops + ID cleaning
@@ -192,10 +200,10 @@ uv run python -m src.main apply-corrections --input corrections.csv  # Apply fix
 ✅ notion_client/config_loader.py (v1) - Template engine working
 ✅ notion_client/profile_loader.py (v1) - Profile system working
 ✅ notion_client/reviewer.py (v2) - Dynamic review system, clean UI
-✅ config/categories.yaml (v3) - Enhanced with "Cooking Reference" category
-✅ config/conflict_rules.yaml (v3) - Refined categorization logic
+✅ config/categories.yaml (v4) - Enhanced with Recipe Components & Substitutions
+✅ config/conflict_rules.yaml (v4) - Fixed precedence logic
 ✅ config/analysis_profiles.yaml (v1) - Complete profile system
-✅ config/prompts/base_prompt.txt (v2) - Improved recipe detection
+✅ config/prompts/base_prompt.txt (v3) - Enhanced component/substitution detection
 ✅ config/cuisines.yaml (v1) - Complete cuisine system
 ✅ config/dietary_tags.yaml (v1) - Complete dietary tags
 ✅ config/usage_tags.yaml (v1) - Complete usage tags
