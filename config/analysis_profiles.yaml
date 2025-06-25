@@ -1,67 +1,126 @@
 # Analysis Configuration Profiles
-# Version: v1
-# Predefined settings for common analysis scenarios
+# Version: v2
+# Unified profiles supporting both single commands and pipeline workflows
 
 profiles:
   default:
     description: "Smart defaults for comprehensive analysis"
-    use_llm: true
-    include_content_review: true
-    batch_size: 20
-    batch_delay: 2
-    timeout: 30
+    extract:
+      records: null  # No limit
+    analyze:
+      use_llm: true
+      include_content_review: true
+      batch_size: 20
+      batch_delay: 2
+      timeout: 30
+    review:
+      format: html
     
   quick:
     description: "Fast analysis - statistics only, no LLM"
-    use_llm: false
-    include_content_review: false
-    
+    analyze:
+      use_llm: false
+      include_content_review: false
+    review:
+      format: html
+      
   testing:
-    description: "Test mode with sample recipes and longer timeouts"
-    use_llm: true
-    include_content_review: true
-    sample_size: 10
-    timeout: 60
-    batch_delay: 1
-    
+    description: "Test mode with sample data and longer timeouts"
+    extract:
+      records: 10
+    analyze:
+      use_llm: true
+      include_content_review: true
+      recipes: 10
+      timeout: 60
+      batch_delay: 1
+    review:
+      format: html
+      
   production:
     description: "Optimized for large datasets with faster processing"
-    use_llm: true
-    include_content_review: true
-    batch_size: 50
-    batch_delay: 1
-    timeout: 45
-    
+    extract:
+      records: null  # No limit
+    analyze:
+      use_llm: true
+      include_content_review: true
+      batch_size: 50
+      batch_delay: 1
+      timeout: 45
+    review:
+      format: html
+      
   content_cleanup:
-    description: "Focus on content quality analysis"
-    use_llm: true
-    include_content_review: true
-    batch_size: 15
-    batch_delay: 3
-    timeout: 45
-    
-  sample_small:
-    description: "Quick test with 5 recipes"
-    use_llm: true
-    include_content_review: true
-    sample_size: 5
-    timeout: 30
-    
-  sample_medium:
-    description: "Medium test with 20 recipes"
-    use_llm: true
-    include_content_review: true
-    sample_size: 20
-    timeout: 30
-    batch_size: 10
-    
+    description: "Focus on content quality analysis and issues"
+    extract:
+      records: null
+    analyze:
+      use_llm: true
+      include_content_review: true
+      batch_size: 15
+      batch_delay: 3
+      timeout: 45
+    review:
+      format: csv
+      issues_only: true
+      
+  small_sample:
+    description: "Quick test with 5 items"
+    extract:
+      records: 5
+    analyze:
+      use_llm: true
+      include_content_review: true
+      recipes: 5
+      timeout: 30
+    review:
+      format: html
+      
+  medium_sample:
+    description: "Medium test with 20 items"
+    extract:
+      records: 20
+    analyze:
+      use_llm: true
+      include_content_review: true
+      recipes: 20
+      timeout: 30
+      batch_size: 10
+    review:
+      format: html
+      
   debugging:
     description: "Slow, careful analysis for troubleshooting"
-    use_llm: true
-    include_content_review: true
-    batch_size: 5
-    batch_delay: 5
-    timeout: 90
+    extract:
+      records: 5
+    analyze:
+      use_llm: true
+      include_content_review: true
+      recipes: 5
+      batch_size: 5
+      batch_delay: 5
+      timeout: 90
+    review:
+      format: html
+      summary: true
+
+  analysis_only:
+    description: "Skip extraction, analyze existing data and review"
+    analyze:
+      use_llm: true
+      include_content_review: true
+      batch_size: 20
+      timeout: 30
+    review:
+      format: html
+
+  review_focus:
+    description: "Generate comprehensive review outputs"
+    review:
+      format: html
+      csv: true
+      summary: true
+      issues_only: false
 
 # Shortcut mappings for CLI convenience
 shortcuts:
@@ -70,8 +129,8 @@ shortcuts:
     description: "Statistics only, no LLM analysis"
     
   sample:
-    profile: sample_small
-    description: "Quick test with 5 recipes"
+    profile: small_sample
+    description: "Quick test with 5 items"
     
   production:
     profile: production
@@ -79,13 +138,24 @@ shortcuts:
     
   test:
     profile: testing
-    description: "Test mode with 10 recipes and longer timeouts"
+    description: "Test mode with 10 items and longer timeouts"
 
 # Default overrides for common flags
 flag_defaults:
   # These settings apply when no profile is specified
-  use_llm: true
-  include_content_review: true
-  batch_size: 20
-  batch_delay: 2
-  timeout: 30
+  extract:
+    records: null
+  analyze:
+    use_llm: true
+    include_content_review: true
+    batch_size: 20
+    batch_delay: 2
+    timeout: 30
+  review:
+    format: html
+
+# Pipeline-specific settings
+pipeline_settings:
+  default_steps: [extract, analyze, review]
+  error_handling: stop_on_failure
+  progress_reporting: true
