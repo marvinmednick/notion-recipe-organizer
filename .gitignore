@@ -20,6 +20,8 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*:Zone.Identifier
+
 
 # Virtual environments
 .env
@@ -49,6 +51,9 @@ logs/
 
 # data output files
 data/
+
+# temp directory for saving copies
+saved/
 
 # OS
 .DS_Store
