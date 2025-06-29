@@ -1,16 +1,16 @@
 # Pipeline Workflows
 
-The pipeline command enables automated workflows by chaining extract, analyze, and review commands together with shared configuration.
+The pipeline command enables automated workflows by chaining commands together with shared configuration. Supports both Phase 1 analysis workflows and Phase 2 database enhancement workflows.
 
-## Basic Pipeline Usage
+## Phase 1: Analysis Pipeline Workflows
 
-### Full Workflow
+### Full Analysis Workflow
 ```bash
 # Complete recipe organization pipeline
 uv run python -m src.main pipeline extract analyze review
 ```
 
-### Partial Workflows
+### Partial Analysis Workflows
 ```bash
 # Skip extraction (use existing data)
 uv run python -m src.main pipeline analyze review
@@ -20,6 +20,29 @@ uv run python -m src.main pipeline extract analyze
 
 # Single step (equivalent to running command directly)
 uv run python -m src.main pipeline analyze
+```
+
+## Phase 2: Database Enhancement Workflows
+
+### Full Database Enhancement
+```bash
+# Complete database enhancement pipeline
+uv run python -m src.main pipeline backup-database enhance-database
+```
+
+### Database Enhancement with Analysis
+```bash
+# Full workflow: analyze recipes and enhance database
+uv run python -m src.main pipeline extract analyze backup-database enhance-database
+```
+
+### Testing Database Enhancement
+```bash
+# Test with sample data before full enhancement
+uv run python -m src.main pipeline backup-database enhance-database --sample 10 --dry-run
+
+# Test enhancement without backup (if backup already exists)
+uv run python -m src.main enhance-database --sample 5 --dry-run
 ```
 
 ## Pipeline Options
@@ -51,9 +74,10 @@ uv run python -m src.main pipeline --database-id abc123 extract analyze review
 - `--profile`: Applies to all steps
 - `--limit`: Applies to extract (as max-records) and analyze (as sample)
 - `--timeout`: Applies to analyze step only
-- `--dry-run`: Applies to extract step only
+- `--dry-run`: Applies to extract and enhance-database steps
 - `--quick`: Applies to analyze step only
-- `--database-id`: Applies to extract step only
+- `--database-id`: Applies to extract and backup-database steps
+- `--sample`: Applies to enhance-database step for testing
 
 ## Configuration Profiles
 
@@ -94,6 +118,7 @@ uv run python -m src.main pipeline --profile small_sample extract analyze review
 
 The pipeline uses file-based data flow for reliability and debugging:
 
+### Phase 1: Analysis Data Flow
 ```
 1. Extract Step
    └── Saves to: data/raw/recipes.json
@@ -108,6 +133,21 @@ The pipeline uses file-based data flow for reliability and debugging:
    └── Reads from: data/processed/analysis_report.json
    └── Saves to: data/processed/review/review_report.html
    └── Saves to: data/processed/review/*.csv (if --csv)
+```
+
+### Phase 2: Database Enhancement Data Flow
+```
+1. Backup Database Step
+   └── Saves to: data/backups/database_backup_[timestamp].json
+   └── Saves to: data/backups/backup_metadata.json
+   
+2. Enhance Database Step
+   └── Reads from: data/processed/analysis_report.json (AI categorization)
+   └── Reads from: data/backups/backup_metadata.json (safety validation)
+   └── Modifies: Notion database schema (adds properties)
+   └── Modifies: Notion database data (populates AI categorization)
+   └── Creates: Notion database views (filtered by categories)
+   └── Saves to: data/processed/enhancement_report.json
 ```
 
 ## Error Handling

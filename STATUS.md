@@ -66,11 +66,31 @@
 - `quick`: Statistics-only analysis without LLM calls
 - `small_sample`: 5-recipe test mode for quick validation
 
-### Next Steps (Immediate)
+### Next Steps (Phase 2.0): Database Enhancement
 
-1. **Ready for Phase 2**: Database schema enhancement
-2. **Documentation Refactoring**: Implementing modular documentation structure
-3. **Optional Enhancements**: Consider adding "golden file" tests for regression testing
+**Simplified 2-Step Approach with Safety:**
+
+1. **`backup-database`** - Complete database backup with rollback capability
+2. **`enhance-database`** - Combined schema enhancement + data population + view creation
+
+**New Phase 2 Commands:**
+```bash
+# Full database enhancement workflow
+uv run python -m src.main backup-database --verify
+uv run python -m src.main enhance-database --use-analysis-results
+
+# Pipeline integration
+uv run python -m src.main pipeline backup-database enhance-database
+
+# Testing workflow
+uv run python -m src.main enhance-database --sample 10 --dry-run
+```
+
+**Why This Approach:**
+- **Meaningful Review**: Verify schema + filtering with actual populated data
+- **Safety First**: Backup + rollback capability for all changes
+- **Better Testing**: Sample mode for validation before full enhancement
+- **Eliminates Empty Review**: No need to verify filtering logic on empty fields
 
 ### System Health
 

@@ -209,6 +209,86 @@ uv run python -m src.main apply-corrections --input corrections.csv
 
 ---
 
+## Phase 2: Database Enhancement Commands
+
+### `backup-database` - Backup Notion Database
+
+Create a complete backup of your Notion database before making schema changes.
+
+**Usage:**
+```bash
+uv run python -m src.main backup-database
+uv run python -m src.main backup-database --database-id your_db_id --verify
+```
+
+**Options:**
+- `--database-id TEXT` - Notion database ID (or use config default)
+- `--verify` - Verify backup integrity after creation
+- `--output-dir PATH` - Backup directory (default: data/backups/)
+
+**What it backs up:**
+- Complete database schema (properties, types, options)
+- All recipe data and property values
+- Database metadata and configuration
+- Creates rollback instructions for recovery
+
+**Examples:**
+```bash
+# Basic backup with verification
+uv run python -m src.main backup-database --verify
+
+# Backup specific database
+uv run python -m src.main backup-database --database-id abc123 --verify
+
+# Custom backup location
+uv run python -m src.main backup-database --output-dir ./my-backups/ --verify
+```
+
+---
+
+### `enhance-database` - Enhance Database Schema and Data
+
+Add categorization properties to your Notion database and populate with AI analysis results.
+
+**Usage:**
+```bash
+uv run python -m src.main enhance-database --use-analysis-results
+uv run python -m src.main enhance-database --sample 10 --dry-run
+```
+
+**Options:**
+- `--use-analysis-results` - Apply AI categorization from analysis step
+- `--sample INTEGER` - Test with limited number of recipes
+- `--dry-run` - Show what would be changed without modifying database
+- `--database-id TEXT` - Target database ID
+
+**What it enhances:**
+- **Schema**: Adds Primary Category, Cuisine Type, Dietary Tags, Usage Tags properties
+- **Data**: Populates new properties with AI-suggested categorization
+- **Views**: Creates filtered database views for each category
+- **Quality**: Adds content quality fields (summary, proposed title, quality score)
+
+**Examples:**
+```bash
+# Full database enhancement
+uv run python -m src.main enhance-database --use-analysis-results
+
+# Test with sample data first
+uv run python -m src.main enhance-database --sample 5 --dry-run
+
+# Enhance specific database
+uv run python -m src.main enhance-database --database-id abc123 --use-analysis-results
+```
+
+**Enhancement Details:**
+- **Primary Category**: Single-select (Breakfast, Desserts, Baking, Recipe Components, etc.)
+- **Cuisine Type**: Single-select (Italian, Mexican, Asian, Mediterranean, etc.)
+- **Dietary Tags**: Multi-select (Vegetarian, Gluten-Free, Keto, Quick & Easy, etc.)
+- **Usage Tags**: Multi-select (Favorite, Tried & Tested, Want to Try, etc.)
+- **Content Quality**: Text fields for AI-generated summaries and title improvements
+
+---
+
 ### `test` - Test System Components
 
 Test Notion API connection and basic functionality.

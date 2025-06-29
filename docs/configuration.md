@@ -188,11 +188,29 @@ uv run python -m src.main analyze --sample 5
 ```bash
 # Global options (apply to compatible steps)
 --profile TEXT                  # Configuration profile
---database-id TEXT              # For extract step
+--database-id TEXT              # For extract and backup-database steps
 --limit INTEGER                 # Records/recipes to process
 --timeout INTEGER               # For analyze step
---dry-run                       # For extract step
+--dry-run                       # For extract and enhance-database steps
 --quick                         # For analyze step
+--sample INTEGER                # For enhance-database testing
+```
+
+### Phase 2: Database Enhancement Command Options
+
+#### `backup-database` Command
+```bash
+--database-id TEXT              # Notion database ID
+--verify                        # Verify backup integrity
+--output-dir PATH               # Backup directory (default: data/backups/)
+```
+
+#### `enhance-database` Command  
+```bash
+--use-analysis-results          # Apply AI categorization data
+--sample INTEGER                # Test with N recipes only
+--dry-run                       # Show changes without applying
+--database-id TEXT              # Target database ID
 ```
 
 ## Category Configuration

@@ -30,7 +30,9 @@ notion-recipe-organizer/
 │   │   ├── analyze_cmd.py         # Analyze command (~240 lines)
 │   │   ├── review_cmd.py          # Review commands (~120 lines)
 │   │   ├── test_cmd.py            # Test command (~65 lines)
-│   │   └── pipeline_cmd.py        # Pipeline command (~70 lines)
+│   │   ├── pipeline_cmd.py        # Pipeline command (~70 lines)
+│   │   ├── backup_database_cmd.py # Database backup command (Phase 2)
+│   │   └── enhance_database_cmd.py # Database enhancement command (Phase 2)
 │   │
 │   ├── utils/                     # Shared utility functions
 │   │   ├── config_utils.py        # Config validation & connections
@@ -129,7 +131,7 @@ notion-recipe-organizer/
 
 ## Data Flow
 
-### Extract → Analyze → Review Pipeline
+### Phase 1: Extract → Analyze → Review Pipeline
 ```
 1. Extract Command
    └── notion_client/extractor.py
@@ -146,6 +148,24 @@ notion-recipe-organizer/
    └── notion_client/reviewer.py
        └── Loads data/processed/analysis_report.json
            └── Generates HTML/CSV in data/processed/review/
+```
+
+### Phase 2: Database Enhancement Pipeline
+```
+1. Backup Database Command
+   └── notion_client/backup.py (planned)
+       └── Downloads complete database schema & data
+           └── Saves to data/backups/database_backup_[timestamp].json
+           └── Creates rollback instructions
+
+2. Enhance Database Command
+   └── notion_client/enhancer.py (planned)
+       └── Validates backup exists
+       └── Reads data/processed/analysis_report.json
+       └── Modifies Notion database schema (adds properties)
+       └── Populates categorization data from AI analysis
+       └── Creates filtered database views
+           └── Saves to data/processed/enhancement_report.json
 ```
 
 ### Configuration Flow

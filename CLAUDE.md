@@ -18,6 +18,13 @@ uv run python -m src.main review --html   # Generate HTML review interface
 uv run python -m src.main pipeline extract analyze review  # Full workflow
 ```
 
+### Phase 2 Database Enhancement (Planned)
+```bash
+uv run python -m src.main backup-database --verify        # Backup with rollback capability
+uv run python -m src.main enhance-database --use-analysis-results  # Schema + data + views
+uv run python -m src.main pipeline backup-database enhance-database  # Full enhancement workflow
+```
+
 ### Testing
 ```bash
 uv run pytest                    # Run all tests
@@ -49,9 +56,9 @@ uv run pytest -k "test_name"                                      # Tests matchi
 - **File-Based Data Flow** - Commands communicate via JSON files in `data/` directory
 
 ### Data Flow
-1. **Extract** ’ `data/raw/recipes.json`
-2. **Analyze** ’ `data/processed/analysis_results.json`
-3. **Review** ’ `data/processed/review_interface.html` or CSV exports
+1. **Extract** ï¿½ `data/raw/recipes.json`
+2. **Analyze** ï¿½ `data/processed/analysis_results.json`
+3. **Review** ï¿½ `data/processed/review_interface.html` or CSV exports
 
 ### Configuration System
 - **Profiles** - Defined in `config/analysis_profiles.yaml` (testing, production, quick, small_sample)
@@ -99,6 +106,10 @@ The codebase underwent major refactoring to improve maintainability:
 - Direct function calls replaced subprocess architecture
 - Zero breaking changes to CLI interface
 - 40+ tests ensure stability
+
+## Archive Directory
+
+Files in `docs/archive/` are historical documents kept for reference only. **DO NOT UPDATE** archived files - they represent past project states and should remain unchanged for historical accuracy.
 
 ## Key Utilities
 
