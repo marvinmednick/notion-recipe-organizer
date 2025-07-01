@@ -13,7 +13,7 @@ usage_tags:
     assignment: "manual"  # Should be manually assigned, not auto-detected
     priority: "high"
     
-  Tried & Tested:
+  Tried/Tested:
     description: "Recipes that have been made at least once successfully"
     criteria:
       - "Have actually cooked this recipe before"
@@ -23,45 +23,6 @@ usage_tags:
     assignment: "manual"  # Should be manually assigned, not auto-detected
     priority: "medium"
     
-  Want to Try:
-    description: "Interesting recipes saved for future cooking"
-    criteria:
-      - "Looks appealing but haven't made yet"
-      - "Saved for a specific reason (interesting technique, ingredients, etc.)"
-      - "Planning to make when time/ingredients allow"
-    assignment: "auto"  # Can be auto-assigned to untagged recipes
-    priority: "low"
-    
-  Holiday/Special Occasion:
-    description: "Recipes primarily made for holidays or special events"
-    criteria:
-      - "Traditional holiday dishes"
-      - "Special occasion foods (birthdays, celebrations)"
-      - "Recipes that require more time/effort for special events"
-      - "Seasonal or celebration-specific dishes"
-    assignment: "auto"  # Can be detected from recipe names/content
-    priority: "medium"
-    examples: ["Christmas Cookies", "Thanksgiving Turkey", "Birthday Cake"]
-    
-  Family Recipe:
-    description: "Recipes that have been passed down or are family traditions"
-    criteria:
-      - "Handed down from family members"
-      - "Traditional family dishes"
-      - "Recipes with personal/family history"
-      - "Modified over time to family preferences"
-    assignment: "manual"  # Should be manually assigned
-    priority: "high"
-    
-  Experimental:
-    description: "Recipes that are variations or experiments in progress"
-    criteria:
-      - "Modified versions of existing recipes"
-      - "Testing new ingredients or techniques"
-      - "Work-in-progress recipes being refined"
-      - "Fusion or creative adaptations"
-    assignment: "manual"  # Should be manually assigned
-    priority: "low"
 
 # Usage Guidelines:
 # - Manual assignment tags should not be auto-assigned by LLM

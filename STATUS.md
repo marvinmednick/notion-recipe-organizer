@@ -68,29 +68,38 @@
 
 ### Next Steps (Phase 2.0): Database Enhancement
 
-**Simplified 2-Step Approach with Safety:**
+**3-Step Approach with Safety and Title Enhancement:**
 
 1. **`backup-database`** - Complete database backup with rollback capability
 2. **`enhance-database`** - Combined schema enhancement + data population + view creation
+3. **`apply-title-improvements`** - Apply title improvements from Proposed_Title field
 
 **New Phase 2 Commands:**
 ```bash
 # Full database enhancement workflow
 uv run python -m src.main backup-database --verify
 uv run python -m src.main enhance-database --use-analysis-results
+uv run python -m src.main apply-title-improvements
 
 # Pipeline integration
 uv run python -m src.main pipeline backup-database enhance-database
 
 # Testing workflow
 uv run python -m src.main enhance-database --sample 10 --dry-run
+uv run python -m src.main apply-title-improvements --dry-run --sample 5
 ```
 
+**Title Enhancement Workflow:**
+- **Migration Phase**: Populates "Proposed_Title" field with AI suggestions
+- **Review Phase**: Manually edit/remove proposed titles in Notion interface
+- **Application Phase**: Copies non-empty Proposed_Title values to Title field
+- **Rollback**: Re-run migration from source database to restore originals
+
 **Why This Approach:**
-- **Meaningful Review**: Verify schema + filtering with actual populated data
-- **Safety First**: Backup + rollback capability for all changes
-- **Better Testing**: Sample mode for validation before full enhancement
-- **Eliminates Empty Review**: No need to verify filtering logic on empty fields
+- **Maximum Safety**: Original titles preserved during migration, source database unchanged
+- **Selective Control**: Only applies title improvements where Proposed_Title is non-empty
+- **Manual Review**: Edit or clear proposed titles before applying
+- **Clear Rollback**: Source database always contains original titles
 
 ### System Health
 

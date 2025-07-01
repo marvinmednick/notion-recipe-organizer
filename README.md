@@ -65,13 +65,16 @@ uv run python -m src.main pipeline extract analyze review
 
 ## Documentation
 
-- [Current Status](STATUS.md) - Project phase and recent changes
-- [Architecture](ARCHITECTURE.md) - Codebase structure and design
-- [Pipeline Workflows](docs/pipeline.md) - Automation and chaining commands
-- [Configuration](docs/configuration.md) - Profiles and settings
-- [Testing Guide](docs/testing.md) - How to run and write tests
-- [Features Reference](FEATURES.md) - Complete command documentation
-- [Changelog](CHANGELOG.md) - Major project milestones
+**Essential Reading:**
+- [CLAUDE.md](CLAUDE.md) - Quick commands and development guide
+- [STATUS.md](STATUS.md) - Current project phase and recent changes  
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design, database schema, and migration architecture
+- [FEATURES.md](FEATURES.md) - Complete CLI command reference with examples
+
+**Detailed Guides:**
+- [docs/configuration.md](docs/configuration.md) - Configuration profiles, YAML settings, and troubleshooting
+- [docs/pipeline.md](docs/pipeline.md) - Pipeline workflows and automation patterns
+- [docs/testing.md](docs/testing.md) - Testing framework, running tests, and adding new tests
 
 ## Support
 

@@ -43,49 +43,6 @@ dietary_tags:
       - "Plant-based milk alternatives are acceptable"
     examples: ["Most Meat Dishes", "Dairy-Free Baked Goods", "Vegetable Dishes"]
     
-  Low-Carb:
-    description: "Low in carbohydrates, suitable for low-carb diets"
-    criteria:
-      - "Minimal bread, pasta, rice, potatoes, or high-carb ingredients"
-      - "Focus on proteins, vegetables, and healthy fats"
-      - "Typically under 20-30g carbs per serving"
-    examples: ["Grilled Chicken Salad", "Zucchini Noodles", "Egg-based Dishes"]
-    
-  Keto:
-    description: "Very low carb, high fat, suitable for ketogenic diet"
-    criteria:
-      - "Extremely low carbohydrates (typically under 5-10g per serving)"
-      - "High in healthy fats"
-      - "Moderate protein content"
-      - "No grains, most fruits, or starchy vegetables"
-    examples: ["Avocado Salad", "Bacon and Eggs", "Cauliflower Rice Dishes"]
-    
-  Quick & Easy:
-    description: "Can be prepared in 30 minutes or less"
-    criteria:
-      - "Total time from start to finish is 30 minutes or less"
-      - "Minimal prep work required"
-      - "Simple cooking techniques"
-      - "Few ingredients or steps"
-    examples: ["Scrambled Eggs", "Simple Pasta", "Quick Stir Fry"]
-    
-  One Pot:
-    description: "Cooked in a single pot, pan, or cooking vessel"
-    criteria:
-      - "All main cooking happens in one vessel"
-      - "Minimal dishes to clean"
-      - "May include sheet pan meals"
-      - "Reduces cleanup and simplifies cooking"
-    examples: ["One Pot Pasta", "Sheet Pan Chicken", "Skillet Meals"]
-    
-  Make Ahead:
-    description: "Can be prepared in advance or stores/reheats well"
-    criteria:
-      - "Suitable for meal prep"
-      - "Tastes good when reheated"
-      - "Can be partially or fully prepared ahead of time"
-      - "Freezes well or has good storage properties"
-    examples: ["Casseroles", "Soups", "Marinated Meats", "Baked Goods"]
 
 # Guidelines:
 # - Be conservative with Food Allergy Safe - only assign if clearly safe

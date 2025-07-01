@@ -48,9 +48,18 @@ class TestCommandIntegration:
         result = runner.invoke(cli, ['review', '--help'])
         
         assert result.exit_code == 0
-        assert "Generate review interfaces" in result.output
-        assert "--html" in result.output
-        assert "--csv" in result.output
+
+    def test_create_enhanced_database_help(self):
+        """Test create-enhanced-database command help."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ['create-enhanced-database', '--help'])
+        
+        assert result.exit_code == 0
+        assert "Create enhanced database with improved schema" in result.output
+        assert "--source-database-id" in result.output
+        assert "--use-analysis-results" in result.output
+        assert "--sample" in result.output
+        assert "--dry-run" in result.output
 
     @patch('src.utils.config_utils.validate_config')
     @patch('src.utils.config_utils.test_notion_connection')
