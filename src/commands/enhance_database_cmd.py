@@ -34,22 +34,22 @@ def _load_enhanced_schema_config() -> Dict[str, Any]:
     config_dir = Path("config")
     
     # Load all configuration files
-    categories_config = _load_yaml_config(config_dir / "categories.yaml")
-    cuisines_config = _load_yaml_config(config_dir / "cuisines.yaml")
-    dietary_tags_config = _load_yaml_config(config_dir / "dietary_tags.yaml")
-    usage_tags_config = _load_yaml_config(config_dir / "usage_tags.yaml")
+    categories_yaml = _load_yaml_config(config_dir / "categories.yaml")
+    cuisines_yaml = _load_yaml_config(config_dir / "cuisines.yaml")
+    dietary_tags_yaml = _load_yaml_config(config_dir / "dietary_tags.yaml")
+    usage_tags_yaml = _load_yaml_config(config_dir / "usage_tags.yaml")
     
     # Extract options from configs
-    categories = list(categories_config.get("categories", {}).keys())
-    cuisines = list(cuisines_config.get("cuisines", {}).keys())
-    dietary_tags = list(dietary_tags_config.get("dietary_tags", {}).keys())
-    usage_tags = list(usage_tags_config.get("usage_tags", {}).keys())
+    categories_list = list(categories_yaml.get("categories", {}).keys())
+    cuisines_list = list(cuisines_yaml.get("cuisines", {}).keys())
+    dietary_tags_list = list(dietary_tags_yaml.get("dietary_tags", {}).keys())
+    usage_tags_list = list(usage_tags_yaml.get("usage_tags", {}).keys())
     
     return {
-        "categories": categories,
-        "cuisines": cuisines,
-        "dietary_tags": dietary_tags,
-        "usage_tags": usage_tags
+        "categories": categories_list,
+        "cuisines": cuisines_list,
+        "dietary_tags": dietary_tags_list,
+        "usage_tags": usage_tags_list
     }
 
 

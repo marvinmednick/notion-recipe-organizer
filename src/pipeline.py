@@ -111,21 +111,19 @@ def _run_review_step(ctx: PipelineContext) -> None:
 
 def _run_create_enhanced_database_step(ctx: PipelineContext) -> None:
     """Execute create-enhanced-database step with pipeline context."""
-    from .commands.enhance_database_cmd import create_enhanced_database
+    from .commands.enhance_database_cmd import enhance_database_in_place
     
     # Get settings from context
     enhance_settings = ctx.profile_settings.get("enhance", {})
     
     try:
-        # Call create_enhanced_database function directly
-        create_enhanced_database.callback(
-            source_database_id=ctx.global_options.get("database_id"),
-            parent_page_id=enhance_settings.get("parent_page_id"),
+        # Call enhance_database_in_place function directly
+        enhance_database_in_place.callback(
+            database_id=ctx.global_options.get("database_id"),
             use_analysis_results=enhance_settings.get("use_analysis_results", True),
             analysis_file=enhance_settings.get("analysis_file"),
             sample=ctx.global_options.get("limit") or enhance_settings.get("sample"),
-            dry_run=ctx.global_options.get("dry_run", False),
-            enhanced_db_name=enhance_settings.get("enhanced_db_name", "Enhanced Recipe Database")
+            dry_run=ctx.global_options.get("dry_run", False)
         )
     except Exception as e:
         raise PipelineStepError("create-enhanced-database", str(e))
@@ -139,7 +137,7 @@ def run_pipeline(
     """Run a pipeline of commands in sequence.
     
     Args:
-        steps: List of step names to execute ("extract", "analyze", "review", "create-enhanced-database")
+        steps: List of step names to execute ("extract", "analyze", "review", "enhance-database")
         profile: Configuration profile to use
         global_options: Global options to apply across steps
     """
@@ -147,7 +145,7 @@ def run_pipeline(
         global_options = {}
     
     # Validate steps
-    valid_steps = ["extract", "analyze", "review", "create-enhanced-database"]
+    valid_steps = ["extract", "analyze", "review", "enhance-database"]
     invalid_steps = [step for step in steps if step not in valid_steps]
     
     if invalid_steps:
@@ -177,7 +175,7 @@ def run_pipeline(
         "extract": _run_extract_step,
         "analyze": _run_analyze_step,
         "review": _run_review_step,
-        "create-enhanced-database": _run_create_enhanced_database_step
+        "enhance-database": _run_create_enhanced_database_step
     }
     
     # Execute steps in sequence

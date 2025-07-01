@@ -81,11 +81,6 @@ def create_sample_records_table(records: List[Dict[str, Any]], extract_props_fun
     return table
 
 
-def show_extraction_progress(current: int, total: int):
-    """Show extraction progress."""
-    return f"[bold green]Processing record {current}/{total}..."
-
-
 def show_dry_run_results(recipes_data: List[Dict[str, Any]]):
     """Display dry run results."""
     console.print(
@@ -99,13 +94,6 @@ def show_dry_run_results(recipes_data: List[Dict[str, Any]]):
         console.print(f"{i + 1}. {title}{tag_str}")
         if url and url != "No URL":
             console.print(f"   URL: {url}")
-
-
-def show_next_steps(steps: List[str]):
-    """Display next steps recommendations."""
-    console.print("\n[bold blue]💡 Next Steps[/bold blue]")
-    for step in steps:
-        console.print(f"• {step}")
 
 
 def show_completion_message(message: str = "completed"):

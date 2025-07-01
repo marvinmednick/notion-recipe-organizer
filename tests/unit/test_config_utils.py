@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 from src.utils.config_utils import (
     validate_config,
-    test_notion_connection,
+    test_notion_connection as check_notion_connection,
     validate_config_and_connection,
     get_database_id,
     get_notion_client
@@ -41,7 +41,7 @@ class TestConfigUtils:
         mock_client.test_connection.return_value = True
         mock_client_class.return_value = mock_client
         
-        result = test_notion_connection()
+        result = check_notion_connection()
         assert result is True
 
     @patch('src.utils.config_utils.NotionClient')
@@ -51,7 +51,7 @@ class TestConfigUtils:
         mock_client.test_connection.return_value = False
         mock_client_class.return_value = mock_client
         
-        result = test_notion_connection()
+        result = check_notion_connection()
         assert result is False
 
     @patch('src.utils.config_utils.validate_config')

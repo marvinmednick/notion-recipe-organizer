@@ -49,14 +49,14 @@ class TestCommandIntegration:
         
         assert result.exit_code == 0
 
-    def test_create_enhanced_database_help(self):
-        """Test create-enhanced-database command help."""
+    def test_enhance_database_in_place_help(self):
+        """Test enhance-database-in-place command help."""
         runner = CliRunner()
-        result = runner.invoke(cli, ['create-enhanced-database', '--help'])
+        result = runner.invoke(cli, ['enhance-database-in-place', '--help'])
         
         assert result.exit_code == 0
-        assert "Create enhanced database with improved schema" in result.output
-        assert "--source-database-id" in result.output
+        assert "Enhance existing database with AI categorization" in result.output
+        assert "--database-id" in result.output
         assert "--use-analysis-results" in result.output
         assert "--sample" in result.output
         assert "--dry-run" in result.output

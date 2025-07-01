@@ -31,7 +31,7 @@ class TestPipelineIntegration:
         assert "invalid, step" in result.output
         assert "Valid steps" in result.output
         # Should include new commands in valid steps
-        assert "create-enhanced-database" in result.output
+        assert "enhance-database" in result.output
 
     def test_pipeline_no_steps(self):
         """Test pipeline with no steps provided."""
@@ -88,22 +88,24 @@ class TestPipelineIntegration:
         mock_review.assert_called_once()
 
     @patch('src.pipeline._run_create_enhanced_database_step')
+    @patch('src.pipeline._run_analyze_step')
     @patch('src.pipeline.ProfileLoader')
-    def test_pipeline_phase_2_workflow(self, mock_profile_loader, mock_create_enhanced):
+    def test_pipeline_phase_2_workflow(self, mock_profile_loader, mock_analyze, mock_create_enhanced):
         """Test Phase 2.0 database enhancement workflow."""
         # Setup mocks
         mock_profile_loader.return_value.get_profile_settings.return_value = {}
         
         runner = CliRunner()
-        result = runner.invoke(cli, ['pipeline', 'analyze', 'create-enhanced-database'])
+        result = runner.invoke(cli, ['pipeline', 'analyze', 'enhance-database'])
         
         assert result.exit_code == 0
-        assert "Running Pipeline: analyze → create-enhanced-database" in result.output
+        assert "Running Pipeline: analyze → enhance-database" in result.output
         assert "Step 1/2: Analyze" in result.output
-        assert "Step 2/2: Create-Enhanced-Database" in result.output
+        assert "Step 2/2: Enhance-Database" in result.output
         assert "Pipeline completed successfully" in result.output
         
-        # Verify the step was called
+        # Verify the steps were called
+        mock_analyze.assert_called_once()
         mock_create_enhanced.assert_called_once()
 
     @patch('src.pipeline._run_extract_step')

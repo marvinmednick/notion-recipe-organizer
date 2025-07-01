@@ -9,6 +9,7 @@ from ..utils.config_utils import validate_config_and_connection, get_database_id
 from ..utils.display_utils import (
     print_header, print_success, print_error, print_info, show_completion_message
 )
+from ..utils.notion_utils import extract_notion_text_content, create_notion_text_property
 
 console = Console()
 
@@ -89,11 +90,11 @@ def apply_title_improvements(
         
         # Check if Proposed_Title has content
         proposed_title_prop = properties.get("Proposed_Title", {})
-        proposed_title_content = _extract_rich_text_content(proposed_title_prop)
+        proposed_title_content = extract_notion_text_content(proposed_title_prop, "rich_text")
         
         # Check current title
         current_title_prop = properties.get(title_field, {})
-        current_title = _extract_title_content(current_title_prop, title_field)
+        current_title = extract_notion_text_content(current_title_prop, "auto")
         
         if proposed_title_content and proposed_title_content.strip():
             records_to_update.append({
@@ -139,50 +140,6 @@ def apply_title_improvements(
         print_error("No titles were successfully updated")
 
 
-def _extract_rich_text_content(rich_text_prop: Dict[str, Any]) -> str:
-    """Extract text content from rich_text property."""
-    # Handle case where the property value is a simple string
-    if isinstance(rich_text_prop, str):
-        return rich_text_prop
-    
-    # Handle standard rich_text structure
-    if not rich_text_prop or "rich_text" not in rich_text_prop:
-        return ""
-    
-    rich_text_array = rich_text_prop["rich_text"]
-    if not isinstance(rich_text_array, list):
-        return ""
-    
-    content_parts = []
-    for text_block in rich_text_array:
-        if isinstance(text_block, dict) and "text" in text_block:
-            content_parts.append(text_block["text"].get("content", ""))
-    
-    return "".join(content_parts)
-
-
-def _extract_title_content(title_prop: Dict[str, Any], field_name: str) -> str:
-    """Extract text content from title property."""
-    if not title_prop:
-        return ""
-    
-    # Handle both title and rich_text fields
-    if field_name.lower() == "title" and "title" in title_prop:
-        title_array = title_prop["title"]
-    elif "rich_text" in title_prop:
-        title_array = title_prop["rich_text"]
-    else:
-        return ""
-    
-    if not isinstance(title_array, list):
-        return ""
-    
-    content_parts = []
-    for text_block in title_array:
-        if isinstance(text_block, dict) and "text" in text_block:
-            content_parts.append(text_block["text"].get("content", ""))
-    
-    return "".join(content_parts)
 
 
 def _display_title_changes(records_to_update: List[Dict[str, Any]]) -> None:
@@ -219,15 +176,9 @@ def _apply_title_changes(
             status.update(f"[bold green]Updating title {i + 1}/{len(records_to_update)}...")
             
             try:
-                # Prepare new title property
-                if title_field.lower() in ["title", "name"]:
-                    new_title_prop = {
-                        "title": [{"text": {"content": record["proposed_title"]}}]
-                    }
-                else:
-                    new_title_prop = {
-                        "rich_text": [{"text": {"content": record["proposed_title"]}}]
-                    }
+                # Prepare new title property using utility function
+                prop_type = "title" if title_field.lower() in ["title", "name"] else "rich_text"
+                new_title_prop = create_notion_text_property(record["proposed_title"], prop_type)
                 
                 # Update the record
                 notion_client.client.pages.update(
