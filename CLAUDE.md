@@ -119,6 +119,13 @@ For comprehensive understanding of the system, review these key documents:
 - **docs/pipeline.md** - Pipeline workflows and automation patterns
 - **docs/testing.md** - Testing framework, running tests, and adding new tests
 
+## Data Directory
+
+The `data/` directory contains local analysis results and extracted recipe data. **DO NOT COMMIT** these files as they may contain private recipe content. The `.gitignore` file protects this directory, but be aware that:
+- `data/raw/` contains extracted recipe data from your Notion database
+- `data/processed/` contains AI analysis results with categorizations
+- These files are essential for the enhancement workflow but should remain local
+
 ## Archive Directory
 
 Files in `docs/archive/` are historical documents kept for reference only. **DO NOT UPDATE** archived files - they represent past project states and should remain unchanged for historical accuracy.
