@@ -246,38 +246,38 @@ uv run python -m src.main backup-database --output-dir ./my-backups/ --verify
 
 ---
 
-### `enhance-database` - Enhance Database Schema and Data
+### `enhance-database-in-place` - Enhance Database Schema and Data
 
-Add categorization properties to your Notion database and populate with AI analysis results.
+Add categorization properties to your existing Notion database and populate with AI analysis results.
 
 **Usage:**
 ```bash
-uv run python -m src.main enhance-database --use-analysis-results
-uv run python -m src.main enhance-database --sample 10 --dry-run
+uv run python -m src.main enhance-database-in-place --use-analysis-results
+uv run python -m src.main enhance-database-in-place --sample 10 --dry-run
 ```
 
 **Options:**
 - `--use-analysis-results` - Apply AI categorization from analysis step
-- `--sample INTEGER` - Test with limited number of recipes
-- `--dry-run` - Show what would be changed without modifying database
-- `--database-id TEXT` - Target database ID
+- `--sample INTEGER` - Test with limited number of records
+- `--dry-run` - Show what would be enhanced without making changes
+- `--database-id TEXT` - Target database ID to enhance
 
 **What it enhances:**
-- **Schema**: Adds Primary Category, Cuisine Type, Dietary Tags, Usage Tags properties
-- **Data**: Populates new properties with AI-suggested categorization
-- **Views**: Creates filtered database views for each category
-- **Quality**: Adds content quality fields (summary, proposed title, quality score)
+- **Schema**: Adds new properties to existing database (Primary Category, Cuisine Type, Dietary Tags, Usage Tags, Source Domain, Proposed_Title)
+- **Data**: Populates existing records with AI-suggested categorization
+- **Title Suggestions**: Populates Proposed_Title field with AI-suggested improvements (no Name modification)
+- **Preservation**: All existing properties and content remain unchanged
 
 **Examples:**
 ```bash
 # Full database enhancement
-uv run python -m src.main enhance-database --use-analysis-results
+uv run python -m src.main enhance-database-in-place --use-analysis-results
 
 # Test with sample data first
-uv run python -m src.main enhance-database --sample 5 --dry-run
+uv run python -m src.main enhance-database-in-place --sample 5 --dry-run
 
 # Enhance specific database
-uv run python -m src.main enhance-database --database-id abc123 --use-analysis-results
+uv run python -m src.main enhance-database-in-place --database-id abc123 --use-analysis-results
 ```
 
 **Enhancement Details:**
@@ -285,7 +285,66 @@ uv run python -m src.main enhance-database --database-id abc123 --use-analysis-r
 - **Cuisine Type**: Single-select (Italian, Mexican, Asian, Mediterranean, etc.)
 - **Dietary Tags**: Multi-select (Vegetarian, Gluten-Free, Keto, Quick & Easy, etc.)
 - **Usage Tags**: Multi-select (Favorite, Tried & Tested, Want to Try, etc.)
-- **Content Quality**: Text fields for AI-generated summaries and title improvements
+- **Source Domain**: Rich text field with website domain extracted from URL
+- **Proposed_Title**: Rich text field for AI-suggested title improvements (manual review required)
+
+**Safety Features:**
+- **In-Place Enhancement**: No database copying, all records stay in their original location
+- **Property Preservation**: Never modifies existing properties (Name, URL, Tags, etc.)
+- **Content Preservation**: All page content blocks remain unchanged
+- **Incremental**: Only adds properties that don't already exist
+- **Name Field Behavior**: Original Name field behavior preserved (opens page panel when clicked)
+
+---
+
+### `apply-title-improvements` - Apply Title Improvements
+
+Apply title improvements from the Proposed_Title field to the actual Title field.
+
+**Usage:**
+```bash
+uv run python -m src.main apply-title-improvements
+uv run python -m src.main apply-title-improvements --dry-run --sample 5
+```
+
+**Options:**
+- `--database-id TEXT` - Target enhanced database ID
+- `--sample INTEGER` - Test with limited number of records
+- `--dry-run` - Show what would be changed without modifying titles
+- `--force` - Apply changes without confirmation prompt
+
+**How it works:**
+- Only processes records where Proposed_Title field is non-empty
+- Copies Proposed_Title content to Title field
+- Preserves original titles where Proposed_Title is blank/empty
+- No separate flag field needed - empty Proposed_Title means no change required
+
+**Examples:**
+```bash
+# Apply all proposed title improvements
+uv run python -m src.main apply-title-improvements
+
+# Preview changes first
+uv run python -m src.main apply-title-improvements --dry-run
+
+# Test with sample data
+uv run python -m src.main apply-title-improvements --sample 10 --dry-run
+
+# Apply to specific database
+uv run python -m src.main apply-title-improvements --database-id abc123
+```
+
+**Title Enhancement Workflow:**
+1. **After enhance-database**: Proposed_Title field populated with AI suggestions
+2. **Manual Review**: Edit/remove proposed titles in Notion interface
+3. **Apply Changes**: Run apply-title-improvements to copy Proposed_Title → Title
+4. **Rollback**: Re-run enhance-database from source to restore originals
+
+**Safety Features:**
+- Dry-run mode shows exactly what will change
+- Sample mode for testing on few records
+- Only non-empty Proposed_Title fields are processed
+- Source database always contains original titles for rollback
 
 ---
 

@@ -207,3 +207,164 @@ notion-recipe-organizer/
 5. **New Tests**: Add to appropriate unit/ or integration/ directories
 
 The architecture supports easy addition of new functionality while maintaining clean separation of concerns and comprehensive test coverage.
+
+## Database Architecture
+
+### Notion Database Schema
+
+#### Current Database Schema
+The existing Notion recipe database contains standard properties for recipe management:
+- **Title** (title) - Recipe name
+- **URL** (url) - Source website link
+- **Tags** (multi_select) - Manual organization tags
+- **Additional properties** - Various recipe-specific fields as configured in the original database
+
+#### Enhanced Database Schema (Phase 2)
+The enhanced database adds AI-powered categorization and quality assessment properties:
+
+**Primary Categorization:**
+- **Primary Category** (select) - AI-suggested main category
+  - Options from `config/categories.yaml`: Not a Recipe, Breakfast, Desserts, Baking, Recipe Components, Substitutions, Beef, Chicken, Pork, Seafood, Vegetarian, Sides & Appetizers, Cooking Reference
+  - Single-select with precedence rules for conflict resolution
+
+**Classification Properties:**
+- **Cuisine Type** (select) - Culinary tradition classification
+  - Options from `config/cuisines.yaml`: Mexican, Italian, Asian, American, Mediterranean, Indian, French, Other
+  - Single-select, optional (recipes may have no specific cuisine)
+
+- **Dietary Tags** (multi_select) - Dietary restriction and lifestyle tags
+  - Options from `config/dietary_tags.yaml`: Food Allergy Safe, Vegetarian, Vegan, Gluten-Free, Dairy-Free
+  - Multi-select allowing multiple dietary classifications
+
+- **Usage Tags** (multi_select) - Personal usage patterns and preferences
+  - Options from `config/usage_tags.yaml`: Favorite, Tried/Tested
+  - Multi-select for workflow and personal organization
+
+**Quality Assessment:**
+- **Content Summary** (rich_text) - AI-generated recipe summary
+- **Proposed_Title** (rich_text) - AI-suggested title improvements for manual review
+- **Quality Score** (number) - Content quality rating (1-10)
+- **Source_Domain** (rich_text) - Website domain extracted from recipe URL
+
+### Page-Database Relationship
+
+#### Notion Concept Model
+In Notion's architecture:
+- **Database** = Schema definition with properties and types
+- **Page** = Individual record/row in the database
+- **Properties** = Structured data fields (title, select, multi-select, etc.)
+- **Content Blocks** = Rich content within each page (paragraphs, lists, etc.)
+
+#### Recipe Data Structure
+Each recipe exists as a **Page** within the recipe **Database**:
+
+```
+Recipe Database
+├── Schema (Properties)
+│   ├── Title (title)
+│   ├── URL (url)
+│   ├── Primary Category (select)
+│   ├── Cuisine Type (select)
+│   ├── Dietary Tags (multi_select)
+│   └── Usage Tags (multi_select)
+│
+└── Recipe Pages
+    ├── Recipe Page 1
+    │   ├── Properties: {title: "Chocolate Cake", category: "Desserts", ...}
+    │   └── Content Blocks: [ingredients list, instructions, notes]
+    │
+    ├── Recipe Page 2
+    │   ├── Properties: {title: "Chicken Tacos", category: "Chicken", ...}
+    │   └── Content Blocks: [recipe content]
+    │
+    └── [Additional recipe pages...]
+```
+
+#### Data Access Patterns
+- **Database Query**: Retrieve all recipe pages with their properties
+- **Page Content**: Access individual recipe's ingredients and instructions
+- **Property Updates**: Modify structured data (categories, tags) via database API
+- **Content Updates**: Modify recipe text via page blocks API
+
+### In-Place Enhancement Architecture (Phase 2)
+
+#### Enhancement Strategy
+The Phase 2 implementation uses an **in-place database enhancement approach**:
+
+1. **Target Database** - Existing recipe database is enhanced directly
+2. **Schema Addition** - New AI properties added to existing database schema
+3. **Data Population** - Existing records updated with AI categorization
+4. **Preservation** - All original properties and content remain unchanged
+
+#### Enhancement Process
+```
+Original Database
+│
+├── Schema Enhancement → Add New Properties
+│   └── Add: Primary Category, Cuisine Type, Dietary Tags, Usage Tags, Source Domain, Proposed Title
+│
+├── Data Population → Update Existing Records
+│   ├── Preserve: All original properties (Name, URL, Tags, etc.)
+│   ├── Preserve: All page content blocks (ingredients, instructions)
+│   └── Add: AI categorization from analysis results
+│
+└── Enhanced Database (Same Location)
+    ├── All original data preserved in place
+    ├── Enhanced categorization added to records
+    └── Ready for filtered views and organization
+```
+
+#### Benefits of In-Place Approach
+- **Simplicity**: Single database to manage, no migration complexity
+- **Data Integrity**: No page copying, all content and links remain valid
+- **Name Field Behavior**: Original Name field behavior preserved (opens page panel)
+- **No Duplication**: No duplicate content or orphaned records
+- **Backup Safety**: Original database backed up manually before enhancement
+
+#### Enhancement Implementation
+The enhancement is handled by `src/commands/enhance_database_cmd.py`:
+- **Schema Modification**: Adds new properties to existing database schema only if not present
+- **Record Updates**: Updates existing records with AI categorization data in-place
+- **AI Integration**: Applies analysis results from `data/processed/analysis_report.json`
+- **Title Enhancement**: Populates Proposed_Title field with AI suggestions (no Name modification)
+- **Property Preservation**: Never modifies existing properties or page content
+
+#### Title Enhancement Workflow
+The title improvement process uses a three-phase approach for maximum safety:
+
+**Phase 1: Enhancement with Proposed Titles**
+- Original Name field is never modified during enhancement
+- AI-suggested title improvements populate the `Proposed_Title` field
+- Empty/blank Proposed_Title indicates no improvement suggested
+- Manual backup contains original database state
+
+**Phase 2: Manual Review and Editing**
+- Review proposed titles in Notion's database interface
+- Edit proposed titles to refine AI suggestions
+- Clear Proposed_Title field for titles you don't want to change
+- Only non-empty Proposed_Title fields will be applied
+
+**Phase 3: Title Application**
+- `apply-title-improvements` command copies Proposed_Title → Name
+- Only processes records where Proposed_Title is non-empty
+- Preserves original names where Proposed_Title is blank/empty
+- Provides dry-run mode for preview before applying
+
+**Rollback Strategy:**
+- Manual backup contains original database state for complete restoration
+- Individual titles can be reverted by editing the Name field directly
+- Re-run enhancement to restore Proposed_Title suggestions if needed
+
+### Configuration-Driven Schema
+The enhanced database schema is defined declaratively through YAML configuration:
+
+- `config/categories.yaml` - Primary category definitions with precedence rules
+- `config/cuisines.yaml` - Cuisine type options and classification criteria  
+- `config/dietary_tags.yaml` - Dietary restriction tags with assignment guidelines
+- `config/usage_tags.yaml` - Personal usage patterns and workflow tags
+
+This configuration-driven approach enables:
+- **Easy Customization**: Modify categories without code changes
+- **Validation**: Ensure AI suggestions match available options
+- **Consistency**: Single source of truth for categorization rules
+- **Extensibility**: Add new categories or tags by updating YAML files

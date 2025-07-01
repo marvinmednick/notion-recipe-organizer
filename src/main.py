@@ -18,6 +18,8 @@ from .commands.test_cmd import test
 from .commands.analyze_cmd import analyze
 from .commands.review_cmd import review, apply_corrections
 from .commands.pipeline_cmd import pipeline
+from .commands.enhance_database_cmd import enhance_database_in_place
+from .commands.apply_title_improvements_cmd import apply_title_improvements
 
 console = Console()
 
@@ -79,6 +81,8 @@ cli.add_command(analyze)
 cli.add_command(review)
 cli.add_command(apply_corrections)
 cli.add_command(pipeline)
+cli.add_command(enhance_database_in_place)
+cli.add_command(apply_title_improvements)
 
 
 if __name__ == "__main__":

@@ -18,11 +18,12 @@ uv run python -m src.main review --html   # Generate HTML review interface
 uv run python -m src.main pipeline extract analyze review  # Full workflow
 ```
 
-### Phase 2 Database Enhancement (Planned)
+### Phase 2 Database Enhancement 
 ```bash
 uv run python -m src.main backup-database --verify        # Backup with rollback capability
-uv run python -m src.main enhance-database --use-analysis-results  # Schema + data + views
-uv run python -m src.main pipeline backup-database enhance-database  # Full enhancement workflow
+uv run python -m src.main enhance-database-in-place --use-analysis-results  # In-place schema + data enhancement
+uv run python -m src.main apply-title-improvements        # Apply title improvements from Proposed_Title field
+uv run python -m src.main pipeline backup-database enhance-database-in-place  # Full enhancement workflow
 ```
 
 ### Testing
@@ -106,6 +107,17 @@ The codebase underwent major refactoring to improve maintainability:
 - Direct function calls replaced subprocess architecture
 - Zero breaking changes to CLI interface
 - 40+ tests ensure stability
+
+## Key Documentation
+
+For comprehensive understanding of the system, review these key documents:
+
+- **ARCHITECTURE.md** - Complete system design, database schema, and migration architecture
+- **FEATURES.md** - Complete CLI command reference with all options and examples
+- **STATUS.md** - Current project phase, recent changes, and next steps
+- **docs/configuration.md** - Configuration profiles, YAML settings, and troubleshooting
+- **docs/pipeline.md** - Pipeline workflows and automation patterns
+- **docs/testing.md** - Testing framework, running tests, and adding new tests
 
 ## Archive Directory
 
